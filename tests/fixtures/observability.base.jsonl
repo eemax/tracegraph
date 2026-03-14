@@ -1,0 +1,3 @@
+{"timestamp":"2026-03-13T03:46:49.053Z","event":"telegram.inbound.received","trace":{"traceId":"trace_001","spanId":"span_root","parentSpanId":null,"origin":"telegram"},"stage":"received","chatId":"8512871156","messageId":"459","payload":{"text":"How are you"}}
+{"timestamp":"2026-03-13T03:46:49.060Z","event":"routing.gatekeeping.checked","trace":{"traceId":"trace_001","spanId":"span_route","parentSpanId":"span_root","origin":"routing"},"stage":"checked","chatId":"8512871156","allowed":true}
+{"timestamp":"2026-03-13T03:46:49.063Z","event":"conversation.event.appended","trace":{"traceId":"trace_001","spanId":"span_state","parentSpanId":"span_route","origin":"state"},"stage":"completed","chatId":"8512871156","payload":{"role":"user","content":"How are you"}}

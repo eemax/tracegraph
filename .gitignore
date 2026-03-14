@@ -1,0 +1,11 @@
+node_modules/
+apps/web/.svelte-kit/
+apps/web/build/
+apps/server/dist/
+packages/shared/dist/
+tests/tmp/
+tests/results/
+tests/fixtures/observability.load.100k.jsonl
+playwright-report/
+test-results/
+.DS_Store

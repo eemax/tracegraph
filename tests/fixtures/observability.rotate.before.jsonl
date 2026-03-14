@@ -1,0 +1,2 @@
+{"timestamp":"2026-03-13T03:46:49.053Z","event":"before.one","trace":{"traceId":"trace_rotate","spanId":"span_1","parentSpanId":null,"origin":"tool"}}
+{"timestamp":"2026-03-13T03:46:49.060Z","event":"before.two","trace":{"traceId":"trace_rotate","spanId":"span_2","parentSpanId":"span_1","origin":"tool"}}
