@@ -4,20 +4,24 @@
   import {
     buildEventTypeGroups,
     buildQueryString,
+    buildTraceGroups,
     buildTraceTimeline,
     eventMatchesFilters,
     formatTimestamp,
     getEventType,
+    getTraceGroupKey,
+    highlightJsonSyntax,
     toPrettyInspectorJson,
     type EventTypeGroup,
     type TimelineItem,
     type UiFilters
   } from '$lib/ui';
 
+  type GroupMode = 'types' | 'traces';
   type InspectorTab = 'parsed' | 'raw' | 'trace';
   type ParsedField = { label: string; value: string };
 
-  const allTypesKey = '__all_types__';
+  const allGroupsKey = '__all_groups__';
   const rowHeight = 50;
   const overscan = 10;
   const notAvailable = 'n/a';
@@ -41,8 +45,9 @@
   let loadingMore = false;
   let sources: Record<string, SourceStatus> = {};
 
-  let selectedType = allTypesKey;
-  let typeGroups: EventTypeGroup[] = [];
+  let groupingMode: GroupMode = 'types';
+  let selectedGroup = allGroupsKey;
+  let groups: EventTypeGroup[] = [];
   let filteredEvents: NormalizedEvent[] = [];
 
   let selectedId: string | null = null;
@@ -50,6 +55,7 @@
   let inspectorTab: InspectorTab = 'parsed';
   let parsedFields: ParsedField[] = [];
   let rawInspectorJson = '';
+  let highlightedRawInspectorJson = '';
 
   let traceTimeline: TimelineItem[] = [];
   let currentTraceRequest: string | null = null;
@@ -60,13 +66,13 @@
   let scrollTop = 0;
   let viewportHeight = 520;
 
-  $: typeGroups = buildEventTypeGroups(events);
+  $: groups = groupingMode === 'types' ? buildEventTypeGroups(events) : buildTraceGroups(events);
   $: filteredEvents =
-    selectedType === allTypesKey ? events : events.filter((event) => isEventInTypeGroup(event, selectedType));
+    selectedGroup === allGroupsKey ? events : events.filter((event) => isEventInGroup(event, selectedGroup));
 
   $: {
-    if (selectedType !== allTypesKey && !typeGroups.some((group) => group.key === selectedType)) {
-      selectedType = allTypesKey;
+    if (selectedGroup !== allGroupsKey && !groups.some((group) => group.key === selectedGroup)) {
+      selectedGroup = allGroupsKey;
     }
   }
 
@@ -94,6 +100,7 @@
 
   $: parsedFields = selectedEvent ? buildParsedFields(selectedEvent) : [];
   $: rawInspectorJson = selectedEvent ? toPrettyInspectorJson(selectedEvent.raw) : '';
+  $: highlightedRawInspectorJson = highlightJsonSyntax(rawInspectorJson);
 
   $: totalRows = filteredEvents.length;
   $: startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
@@ -210,7 +217,7 @@
   }
 
   function applyFilters(): void {
-    selectedType = allTypesKey;
+    selectedGroup = allGroupsKey;
     nextCursor = null;
     resetListScroll();
     void fetchEvents(null, false);
@@ -230,14 +237,27 @@
     applyFilters();
   }
 
-  function selectType(type: string): void {
-    selectedType = type;
+  function setGroupingMode(mode: GroupMode): void {
+    if (groupingMode === mode) {
+      return;
+    }
+    groupingMode = mode;
+    selectedGroup = allGroupsKey;
     resetListScroll();
   }
 
-  function isEventInTypeGroup(event: NormalizedEvent, groupKey: string): boolean {
-    const type = getEventType(event);
-    return type === groupKey || type.startsWith(`${groupKey}.`);
+  function selectGroup(group: string): void {
+    selectedGroup = group;
+    resetListScroll();
+  }
+
+  function isEventInGroup(event: NormalizedEvent, groupKey: string): boolean {
+    if (groupingMode === 'types') {
+      const type = getEventType(event);
+      return type === groupKey || type.startsWith(`${groupKey}.`);
+    }
+
+    return getTraceGroupKey(event) === groupKey;
   }
 
   function onScroll(event: Event): void {
@@ -344,10 +364,7 @@
 
 <div class="app-shell">
   <header class="topbar">
-    <div class="title-group">
-      <h1>Observe Graph</h1>
-      <p>Compact inspection workspace for live JSONL observability events.</p>
-    </div>
+    <h1 class="app-title">Observe Graph</h1>
 
     <div class="stats" aria-live="polite">
       <span>Total {total}</span>
@@ -357,73 +374,6 @@
     </div>
   </header>
 
-  <form
-    class="filters"
-    on:submit|preventDefault={() => {
-      applyFilters();
-    }}
-  >
-    <label>
-      Event
-      <input bind:value={filters.event} placeholder="tool.workflow.progress" />
-    </label>
-
-    <label>
-      Stage
-      <input bind:value={filters.stage} placeholder="completed" />
-    </label>
-
-    <label>
-      Origin
-      <input bind:value={filters.origin} placeholder="provider" />
-    </label>
-
-    <label>
-      Trace
-      <input bind:value={filters.traceId} placeholder="trace_..." />
-    </label>
-
-    <label>
-      Chat
-      <input bind:value={filters.chatId} placeholder="8512871156" />
-    </label>
-
-    <label>
-      Search
-      <input bind:value={filters.q} placeholder="text in payload" />
-    </label>
-
-    <label>
-      From
-      <input bind:value={filters.from} type="datetime-local" />
-    </label>
-
-    <label>
-      To
-      <input bind:value={filters.to} type="datetime-local" />
-    </label>
-
-    <div class="filter-actions">
-      <button type="submit">Apply</button>
-      <button type="button" class="ghost" on:click={resetFilters}>Reset</button>
-    </div>
-  </form>
-
-  <section class="source-strip" aria-label="Source status">
-    {#if Object.values(sources).length === 0}
-      <span class="muted">Waiting for source status...</span>
-    {:else}
-      {#each Object.values(sources) as sourceStatus}
-        <div class:healthy={sourceStatus.healthy} class="source-pill">
-          <strong>{sourceStatus.sourceId}</strong>
-          <span>{sourceStatus.healthy ? 'healthy' : 'degraded'}</span>
-          <span>lines {sourceStatus.totalLines}</span>
-          <span>malformed {sourceStatus.malformedLines}</span>
-        </div>
-      {/each}
-    {/if}
-  </section>
-
   <main class="workspace">
     <section class="events-pane" aria-label="Event feed">
       <div class="pane-head">
@@ -431,38 +381,132 @@
         <span>{loading ? 'Loading...' : 'Live'}</span>
       </div>
 
+      <form
+        class="filters"
+        on:submit|preventDefault={() => {
+          applyFilters();
+        }}
+      >
+        <label>
+          Event
+          <input bind:value={filters.event} placeholder="tool.workflow.progress" />
+        </label>
+
+        <label>
+          Stage
+          <input bind:value={filters.stage} placeholder="completed" />
+        </label>
+
+        <label>
+          Origin
+          <input bind:value={filters.origin} placeholder="provider" />
+        </label>
+
+        <label>
+          Trace
+          <input bind:value={filters.traceId} placeholder="trace_..." />
+        </label>
+
+        <label>
+          Chat
+          <input bind:value={filters.chatId} placeholder="8512871156" />
+        </label>
+
+        <label>
+          Search
+          <input bind:value={filters.q} placeholder="text in payload" />
+        </label>
+
+        <label>
+          From
+          <input bind:value={filters.from} type="datetime-local" />
+        </label>
+
+        <label>
+          To
+          <input bind:value={filters.to} type="datetime-local" />
+        </label>
+
+        <div class="filter-actions">
+          <button type="submit">Apply</button>
+          <button type="button" class="ghost" on:click={resetFilters}>Reset</button>
+        </div>
+      </form>
+
+      <section class="source-strip" aria-label="Source status">
+        {#if Object.values(sources).length === 0}
+          <span class="muted">Waiting for source status...</span>
+        {:else}
+          {#each Object.values(sources) as sourceStatus}
+            <div class:healthy={sourceStatus.healthy} class="source-pill">
+              <strong>{sourceStatus.sourceId}</strong>
+              <span>{sourceStatus.healthy ? 'healthy' : 'degraded'}</span>
+              <span>lines {sourceStatus.totalLines}</span>
+              <span>malformed {sourceStatus.malformedLines}</span>
+            </div>
+          {/each}
+        {/if}
+      </section>
+
       <div class="event-layout">
-        <aside class="type-list" aria-label="Event type groups">
+        <aside class="type-list" aria-label="Event groups">
+          <div class="group-mode-toggle" role="group" aria-label="Group events by">
+            <button
+              class:active={groupingMode === 'types'}
+              type="button"
+              on:click={() => {
+                setGroupingMode('types');
+              }}
+            >
+              Types
+            </button>
+            <button
+              class:active={groupingMode === 'traces'}
+              type="button"
+              on:click={() => {
+                setGroupingMode('traces');
+              }}
+            >
+              Traces
+            </button>
+          </div>
+
           <button
-            class:type-selected={selectedType === allTypesKey}
+            class:type-selected={selectedGroup === allGroupsKey}
             class="type-row"
             type="button"
             on:click={() => {
-              selectType(allTypesKey);
+              selectGroup(allGroupsKey);
             }}
-            title="All event types"
+            title={groupingMode === 'types' ? 'All event types' : 'All traces'}
           >
-            <span class="type-name">All types</span>
+            <span class="type-name">{groupingMode === 'types' ? 'All types' : 'All traces'}</span>
             <strong>{events.length}</strong>
           </button>
 
-          {#each typeGroups as group (group.key)}
+          {#each groups as group (group.key)}
             <button
-              class:type-selected={selectedType === group.key}
+              class:type-selected={selectedGroup === group.key}
               class="type-row"
               type="button"
               on:click={() => {
-                selectType(group.key);
+                selectGroup(group.key);
               }}
               title={group.key}
             >
-              <span class="type-name" style={`padding-left: ${group.depth * 0.72}rem`}>{group.label}</span>
+              <span
+                class:type-parent={!group.isLeaf}
+                class="type-name"
+                style={`padding-left: ${group.depth * 0.72}rem`}
+              >
+                {group.label}
+              </span>
               <strong>{group.count}</strong>
             </button>
           {/each}
 
-          {#if typeGroups.length === 0}
-            <div class="muted">No event types yet.</div>
+          {#if groups.length === 0}
+            <div class="muted">{groupingMode === 'types' ? 'No event types yet.' : 'No traces yet.'}</div>
           {/if}
         </aside>
 
@@ -550,7 +594,7 @@
       </div>
 
       {#if !selectedEvent}
-        <div class="empty">Select an event from a type group.</div>
+        <div class="empty">Select an event from a group.</div>
       {:else if inspectorTab === 'parsed'}
         <dl class="parsed-grid">
           {#each parsedFields as field (field.label)}
@@ -561,14 +605,14 @@
           {/each}
         </dl>
       {:else if inspectorTab === 'raw'}
-        <pre class="code">{rawInspectorJson}</pre>
+        <pre class="code json-code"><code>{@html highlightedRawInspectorJson}</code></pre>
       {:else}
         {#if traceTimeline.length === 0}
           <div class="empty">No timeline available for this trace.</div>
         {:else}
           <div class="timeline">
             {#each traceTimeline as item (item.event.id)}
-              <div class="timeline-row" style={`padding-left: ${item.depth * 1.1}rem`}>
+              <div class="timeline-row" style={`margin-left: ${item.depth * 0.95}rem`}>
                 <span class="timeline-time">{formatTimestamp(item.event.timestamp)}</span>
                 <strong>{item.event.event}</strong>
                 <span>{item.event.trace?.spanId ?? 'span:unknown'}</span>
@@ -597,66 +641,60 @@
   .app-shell {
     height: 100vh;
     display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr);
-    gap: 0.5rem;
-    padding: 0.65rem;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 0.35rem;
+    padding: 0.5rem;
   }
 
   .topbar {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.45rem;
     border: 1px solid #d6dde8;
     border-radius: 0.6rem;
     background: #ffffff;
-    padding: 0.6rem 0.75rem;
+    padding: 0.32rem 0.5rem;
   }
 
-  .title-group h1 {
+  .app-title {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.84rem;
     letter-spacing: 0.01em;
-  }
-
-  .title-group p {
-    margin: 0.2rem 0 0;
-    font-size: 0.74rem;
-    color: #4b5563;
+    line-height: 1.2;
   }
 
   .stats {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    font-size: 0.72rem;
+    gap: 0.3rem;
+    font-size: 0.67rem;
     color: #374151;
   }
 
   .stats span {
     border: 1px solid #e1e7ef;
     border-radius: 999px;
-    padding: 0.2rem 0.5rem;
+    padding: 0.12rem 0.36rem;
     background: #f8fafc;
   }
 
   .filters {
     display: grid;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: 0.45rem;
-    border: 1px solid #d6dde8;
-    border-radius: 0.6rem;
-    background: #ffffff;
-    padding: 0.55rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.28rem;
+    border-bottom: 1px solid #e5ebf3;
+    background: #fcfdff;
+    padding: 0.38rem 0.5rem;
   }
 
   label {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    font-size: 0.67rem;
+    gap: 0.12rem;
+    font-size: 0.62rem;
     color: #4b5563;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   input {
@@ -665,9 +703,10 @@
     border-radius: 0.42rem;
     background: #ffffff;
     color: #111827;
-    padding: 0.35rem 0.45rem;
-    font-size: 0.74rem;
+    padding: 0.2rem 0.34rem;
+    font-size: 0.68rem;
     font-family: inherit;
+    line-height: 1.2;
   }
 
   input::placeholder {
@@ -683,7 +722,9 @@
   .filter-actions {
     display: flex;
     gap: 0.35rem;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: flex-end;
+    grid-column: 1 / -1;
   }
 
   button {
@@ -691,9 +732,9 @@
     border-radius: 0.42rem;
     background: #f8fafc;
     color: #1f2937;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-family: inherit;
-    padding: 0.36rem 0.62rem;
+    padding: 0.22rem 0.45rem;
     cursor: pointer;
   }
 
@@ -708,21 +749,20 @@
   .source-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    border: 1px solid #d6dde8;
-    border-radius: 0.6rem;
+    gap: 0.25rem;
+    border-bottom: 1px solid #e5ebf3;
     background: #ffffff;
-    padding: 0.45rem 0.55rem;
+    padding: 0.28rem 0.5rem;
   }
 
   .source-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.32rem;
     border: 1px solid #f1b3b3;
     border-radius: 999px;
-    padding: 0.15rem 0.52rem;
-    font-size: 0.68rem;
+    padding: 0.1rem 0.42rem;
+    font-size: 0.64rem;
     color: #8f2020;
     background: #fff5f5;
   }
@@ -736,7 +776,7 @@
   .workspace {
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(360px, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     gap: 0.5rem;
   }
 
@@ -793,6 +833,22 @@
     overflow: auto;
   }
 
+  .group-mode-toggle {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.24rem;
+  }
+
+  .group-mode-toggle button {
+    font-size: 0.66rem;
+    padding: 0.2rem 0.35rem;
+  }
+
+  .group-mode-toggle button.active {
+    border-color: #9fb9e8;
+    background: #edf3ff;
+  }
+
   .type-row {
     width: 100%;
     display: flex;
@@ -822,6 +878,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     color: #1f2937;
+  }
+
+  .type-name.type-parent {
+    font-weight: 700;
+    color: #0f172a;
   }
 
   .list-wrap {
@@ -938,6 +999,14 @@
     align-content: start;
   }
 
+  .parsed-grid > div {
+    min-width: 0;
+    border: 1px solid #e6ecf4;
+    border-radius: 0.46rem;
+    background: #fbfdff;
+    padding: 0.44rem 0.5rem;
+  }
+
   .parsed-grid dt {
     font-size: 0.64rem;
     color: #64748b;
@@ -950,6 +1019,9 @@
     margin: 0;
     font-size: 0.73rem;
     color: #111827;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
     word-break: break-word;
   }
 
@@ -957,11 +1029,44 @@
     margin: 0;
     flex: 1;
     overflow: auto;
-    padding: 0.7rem;
+    padding: 0.74rem;
     font-size: 0.72rem;
     color: #0f172a;
     background: #f8fafc;
     font-family: 'IBM Plex Mono', 'Fira Code', 'SF Mono', Menlo, monospace;
+    line-height: 1.42;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .json-code code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  :global(.json-key) {
+    color: #1d4ed8;
+    font-weight: 600;
+  }
+
+  :global(.json-string) {
+    color: #047857;
+  }
+
+  :global(.json-number) {
+    color: #b45309;
+  }
+
+  :global(.json-boolean) {
+    color: #be123c;
+    font-weight: 600;
+  }
+
+  :global(.json-null) {
+    color: #64748b;
+    font-weight: 600;
   }
 
   .timeline {
@@ -974,12 +1079,17 @@
 
   .timeline-row {
     display: flex;
-    align-items: baseline;
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 0.45rem;
-    border-left: 1px solid #c7d7f0;
-    padding-left: 0.52rem;
+    border: 1px solid #e3e9f1;
+    border-left: 3px solid #c7d7f0;
+    border-radius: 0.42rem;
+    padding: 0.3rem 0.45rem;
     font-size: 0.72rem;
     color: #1f2937;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .timeline-time {
@@ -995,29 +1105,22 @@
     color: #64748b;
   }
 
-  @media (max-width: 1280px) {
-    .filters {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-
+  @media (max-width: 1024px) {
     .workspace {
       grid-template-columns: 1fr;
-      grid-template-rows: 0.96fr 1.04fr;
+      grid-template-rows: 1fr 1fr;
     }
   }
 
   @media (max-width: 860px) {
     .app-shell {
-      padding: 0.5rem;
-      gap: 0.4rem;
+      padding: 0.42rem;
+      gap: 0.28rem;
     }
 
     .topbar {
       flex-direction: column;
-    }
-
-    .filters {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: flex-start;
     }
 
     .event-layout {
@@ -1031,6 +1134,16 @@
     }
 
     .parsed-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .filters {
       grid-template-columns: 1fr;
     }
   }

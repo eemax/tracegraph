@@ -3,9 +3,13 @@ import type { NormalizedEvent } from '@observe-graph/shared';
 import {
   buildEventTypeGroups,
   buildQueryString,
+  buildTraceGroups,
   buildTraceTimeline,
   eventMatchesFilters,
   getEventType,
+  getTraceGroupKey,
+  highlightJsonSyntax,
+  missingTraceGroupKey,
   toPrettyInspectorJson
 } from './ui';
 
@@ -134,6 +138,29 @@ describe('ui helpers', () => {
     expect(grouped.find((group) => group.key === 'provider.openai.request.completed')?.isLeaf).toBe(true);
   });
 
+  it('builds trace groups sorted by latest activity', () => {
+    const grouped = buildTraceGroups([
+      makeEvent(1, { trace: { traceId: undefined, spanId: 'span-1', parentSpanId: null, origin: 'tool' } }),
+      makeEvent(2, { trace: { traceId: 'trace-1', spanId: 'span-2', parentSpanId: null, origin: 'tool' } }),
+      makeEvent(3, { trace: { traceId: 'trace-1', spanId: 'span-3', parentSpanId: 'span-2', origin: 'tool' } }),
+      makeEvent(4, { trace: { traceId: 'trace-2', spanId: 'span-4', parentSpanId: null, origin: 'provider' } })
+    ]);
+
+    expect(grouped.map((group) => group.key)).toEqual(['trace-2', 'trace-1', missingTraceGroupKey]);
+    expect(grouped.map((group) => group.label)).toEqual(['trace-2', 'trace-1', 'no-trace']);
+    expect(grouped.find((group) => group.key === 'trace-1')?.count).toBe(2);
+    expect(grouped.every((group) => group.depth === 0)).toBe(true);
+    expect(grouped.every((group) => group.isLeaf)).toBe(true);
+  });
+
+  it('normalizes missing trace ids into a trace group key', () => {
+    const traced = makeEvent(1, { trace: { traceId: 'trace-1', spanId: 's1', parentSpanId: null, origin: 'tool' } });
+    const untraced = makeEvent(2, { trace: { traceId: '', spanId: 's2', parentSpanId: null, origin: 'tool' } });
+
+    expect(getTraceGroupKey(traced)).toBe('trace-1');
+    expect(getTraceGroupKey(untraced)).toBe(missingTraceGroupKey);
+  });
+
   it('parses stringified nested json for raw inspector display', () => {
     const pretty = toPrettyInspectorJson({
       body: {
@@ -149,5 +176,13 @@ describe('ui helpers', () => {
     expect(pretty).toContain('"output": {');
     expect(pretty).toContain('"ok": true');
     expect(pretty).toContain('"stdout": "parallel-ok\\\\n"');
+  });
+
+  it('highlights json syntax for inspector rendering', () => {
+    const highlighted = highlightJsonSyntax('{\n  "ok": true,\n  "count": 2,\n  "data": null\n}');
+    expect(highlighted).toContain('json-key');
+    expect(highlighted).toContain('json-boolean');
+    expect(highlighted).toContain('json-number');
+    expect(highlighted).toContain('json-null');
   });
 });

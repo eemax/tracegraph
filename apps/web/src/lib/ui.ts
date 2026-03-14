@@ -24,6 +24,8 @@ export interface EventTypeGroup {
   isLeaf: boolean;
 }
 
+export const missingTraceGroupKey = '__missing_trace__';
+
 function getTimestampMs(event: NormalizedEvent): number {
   const ms = Date.parse(event.timestamp);
   return Number.isNaN(ms) ? 0 : ms;
@@ -138,6 +140,39 @@ export function buildEventTypeGroups(events: NormalizedEvent[]): EventTypeGroup[
   return out;
 }
 
+export function getTraceGroupKey(event: NormalizedEvent): string {
+  const traceId = event.trace?.traceId?.trim();
+  if (traceId) {
+    return traceId;
+  }
+  return missingTraceGroupKey;
+}
+
+export function buildTraceGroups(events: NormalizedEvent[]): EventTypeGroup[] {
+  const byTrace = new Map<string, { count: number; lastSeq: number }>();
+
+  for (const event of events) {
+    const key = getTraceGroupKey(event);
+    const existing = byTrace.get(key);
+    if (!existing) {
+      byTrace.set(key, { count: 1, lastSeq: event.seq });
+      continue;
+    }
+    existing.count += 1;
+    existing.lastSeq = Math.max(existing.lastSeq, event.seq);
+  }
+
+  return [...byTrace.entries()]
+    .sort(([aKey, a], [bKey, b]) => b.lastSeq - a.lastSeq || aKey.localeCompare(bKey))
+    .map(([key, meta]) => ({
+      key,
+      label: key === missingTraceGroupKey ? 'no-trace' : key,
+      depth: 0,
+      count: meta.count,
+      isLeaf: true
+    }));
+}
+
 function looksLikeStructuredJson(value: string): boolean {
   const trimmed = value.trim();
   if (trimmed.length < 2) {
@@ -190,6 +225,37 @@ function expandStringifiedJson(value: unknown, depth = 0): unknown {
 export function toPrettyInspectorJson(value: Record<string, unknown>): string {
   const expanded = expandStringifiedJson(value);
   return JSON.stringify(expanded, null, 2);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+export function highlightJsonSyntax(prettyJson: string): string {
+  const escaped = escapeHtml(prettyJson);
+  return escaped.replace(
+    /(&quot;(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\&]|&(?!quot;))*&quot;\s*:|&quot;(?:\\u[\da-fA-F]{4}|\\[^u]|[^\\&]|&(?!quot;))*&quot;|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g,
+    (token) => {
+      if (token.startsWith('&quot;') && token.endsWith(':')) {
+        return `<span class="json-key">${token}</span>`;
+      }
+      if (token.startsWith('&quot;')) {
+        return `<span class="json-string">${token}</span>`;
+      }
+      if (token === 'true' || token === 'false') {
+        return `<span class="json-boolean">${token}</span>`;
+      }
+      if (token === 'null') {
+        return `<span class="json-null">${token}</span>`;
+      }
+      return `<span class="json-number">${token}</span>`;
+    }
+  );
 }
 
 function toIsoFromLocalInput(value: string): string | undefined {
