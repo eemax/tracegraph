@@ -192,4 +192,44 @@ describe('normalizeEvent', () => {
     expect(event?.derived?.outputPreview).toContain('parallel-ok');
     expect(event?.derived?.outputPreview).toContain('alpha BETA gamma delta');
   });
+
+  it('extracts output preview from truncated stringified function output', () => {
+    const event = normalizeEvent(
+      {
+        timestamp: '2026-03-14T01:35:12.019Z',
+        event: 'provider.openai.request.started',
+        stage: 'started',
+        chatId: '8512871156',
+        messageId: '731',
+        attempt: 1,
+        maxAttempts: 3,
+        body: {
+          model: 'gpt-5.3-codex',
+          input: [
+            {
+              type: 'function_call_output',
+              call_id: 'call_Ar63VjJb0XfFAZXoMIstgjKJ',
+              output:
+                '{"ok":true,"summary":"Bash command completed successfully.","data":{"stdout":"const x = 1;\\nconst y = 2; ...[TRUNCATED:+372 chars]'
+            }
+          ]
+        }
+      },
+      {
+        id: 'source-a:5',
+        seq: 5,
+        sourceId: 'source-a',
+        sourceLabel: 'Source A',
+        line: 5,
+        offset: 180,
+        ingestedAt: '2026-03-14T01:35:12.030Z'
+      }
+    );
+
+    expect(event).not.toBeNull();
+    expect(event?.derived?.attempt).toBe(1);
+    expect(event?.derived?.maxAttempts).toBe(3);
+    expect(event?.derived?.outputPreview).toContain('Bash command completed successfully');
+    expect(event?.derived?.outputPreview).toContain('const x = 1; const y = 2;');
+  });
 });

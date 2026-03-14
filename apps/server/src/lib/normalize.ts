@@ -74,6 +74,98 @@ function parseJsonRecord(value: string): Record<string, unknown> | undefined {
   }
 }
 
+function decodeEscapedChar(input: string, index: number): { char: string; nextIndex: number } {
+  const marker = input[index];
+  if (marker !== '\\') {
+    return { char: marker, nextIndex: index + 1 };
+  }
+
+  const next = input[index + 1];
+  if (!next) {
+    return { char: '', nextIndex: index + 1 };
+  }
+
+  if (next === 'n') return { char: '\n', nextIndex: index + 2 };
+  if (next === 'r') return { char: '\r', nextIndex: index + 2 };
+  if (next === 't') return { char: '\t', nextIndex: index + 2 };
+  if (next === 'b') return { char: '\b', nextIndex: index + 2 };
+  if (next === 'f') return { char: '\f', nextIndex: index + 2 };
+  if (next === '"' || next === '\\' || next === '/') return { char: next, nextIndex: index + 2 };
+  if (next === 'u') {
+    const hex = input.slice(index + 2, index + 6);
+    if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+      return { char: String.fromCharCode(Number.parseInt(hex, 16)), nextIndex: index + 6 };
+    }
+    return { char: 'u', nextIndex: index + 2 };
+  }
+
+  return { char: next, nextIndex: index + 2 };
+}
+
+function extractLooseStringField(input: string, field: string): string | undefined {
+  const marker = `"${field}"`;
+  const markerIndex = input.indexOf(marker);
+  if (markerIndex < 0) {
+    return undefined;
+  }
+
+  const colonIndex = input.indexOf(':', markerIndex + marker.length);
+  if (colonIndex < 0) {
+    return undefined;
+  }
+
+  let valueStart = colonIndex + 1;
+  while (valueStart < input.length && /\s/.test(input[valueStart] ?? '')) {
+    valueStart += 1;
+  }
+
+  if (input[valueStart] !== '"') {
+    return undefined;
+  }
+
+  let cursor = valueStart + 1;
+  let value = '';
+
+  while (cursor < input.length) {
+    const current = input[cursor];
+    if (current === '"') {
+      return value;
+    }
+
+    if (current === '\\') {
+      const decoded = decodeEscapedChar(input, cursor);
+      value += decoded.char;
+      cursor = decoded.nextIndex;
+      continue;
+    }
+
+    value += current;
+    cursor += 1;
+  }
+
+  // Truncated JSON strings can end without a closing quote.
+  return value.length > 0 ? value : undefined;
+}
+
+function summarizeLooseFunctionOutput(value: string): string | undefined {
+  const parts: string[] = [];
+  const summary = extractLooseStringField(value, 'summary');
+  const stdout = extractLooseStringField(value, 'stdout');
+  const content = extractLooseStringField(value, 'content');
+  const text = extractLooseStringField(value, 'text');
+
+  if (summary) parts.push(summary);
+  if (stdout) parts.push(stdout);
+  if (content) parts.push(content);
+  if (text) parts.push(text);
+
+  if (parts.length === 0) {
+    return undefined;
+  }
+
+  return compactText(parts.join(' '), 220);
+}
+
 function pickBodyOutputText(rawValue: Record<string, unknown>): string | undefined {
   const body = asRecord(rawValue.body);
   if (!body) {
@@ -162,7 +254,7 @@ function summarizeFunctionOutput(value: unknown): string | undefined {
     if (parsed) {
       return summarizeFunctionOutputRecord(parsed) ?? compactText(asText, 220);
     }
-    return compactText(asText, 220);
+    return summarizeLooseFunctionOutput(asText) ?? compactText(asText, 220);
   }
 
   const asObject = asRecord(value);
