@@ -1,43 +1,27 @@
 # Tracegraph
 
-Tracegraph is a tracing tool for observability mode in agent-commander. It ingests JSONL log files, indexes up to 100k events in memory, and exposes a terminal-inspired UI with an event explorer + event inspector.
+Tracing tool for observability mode in [agent-commander](https://github.com/eemax/agent-commander). Ingests JSONL log files, indexes up to 100k events in memory, and serves a terminal-style trace explorer UI.
 
 ## Stack
 
 - Runtime: Bun
-- API server: Elysia
-- UI: SvelteKit (Vite)
-- Shared contracts: workspace package in `packages/shared`
+- API: Elysia
+- UI: SvelteKit
+- Shared contracts: `packages/shared`
 
 ## Quick start
 
-1. Install dependencies:
-
 ```bash
 bun install
-```
-
-2. Run both API + UI:
-
-```bash
 bun run dev
 ```
 
-Alternative split mode:
-
-```bash
-bun run dev:server
-bun run dev:web
-```
-
-4. Open:
-
 - UI: http://127.0.0.1:5173
-- API health: http://127.0.0.1:4317/api/health
+- API: http://127.0.0.1:4317/api/health
 
 ## Configuration
 
-Log sources are configured in `tracegraph.config.yaml`:
+Edit `tracegraph.config.yaml` to point at your JSONL log files:
 
 ```yaml
 server:
@@ -46,42 +30,16 @@ server:
 sources:
   - id: telegram-main
     label: Telegram Main Flow
-    path: ./logs/sample-observability.jsonl
+    path: ~/agent-commander/.agent-commander/observability.jsonl
     color: '#56d364'
 ```
 
-## API
+See [docs/config.md](docs/config.md) for full reference.
 
-- `GET /api/health`
-- `GET /api/sources`
-- `GET /api/events?cursor&limit&from&to&event&stage&origin&traceId&chatId&q`
-- `GET /api/events/:id`
-- `GET /api/stream` (SSE with `snapshot`, `append`, `source_status`)
+## Docs
 
-## Build and test
-
-```bash
-bun run build
-bun run test
-bun run test:unit
-bun run test:integration
-bun run test:e2e
-bun run test:all
-```
-
-## E2E smoke
-
-Playwright smoke test scaffold is included:
-
-```bash
-bun run --cwd apps/web test:e2e
-```
-
-## Additional docs
-
-- `docs/AGENTS-README.md`
-- `docs/ARCHITECTURE.md`
-- `docs/USER-GUIDE.md`
-- `docs/CONFIG-REFERENCE.md`
-- `docs/PROGRESS.log`
-- `docs/AGENTS-HANDOFF.md`
+- [AGENTS.md](AGENTS.md) — agent working conventions
+- [docs/architecture.md](docs/architecture.md) — system design and data flow
+- [docs/config.md](docs/config.md) — configuration reference
+- [docs/testing.md](docs/testing.md) — test structure and matrix
+- [docs/user-guide.md](docs/user-guide.md) — UI usage guide

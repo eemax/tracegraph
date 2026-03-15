@@ -1,6 +1,0 @@
-2026-03-13 11:01 +0700 | INIT | Greenfield workspace created (server/web/shared), base config and sample logs added.
-2026-03-13 11:12 +0700 | BUILD | Backend ingestion, API, SSE, UI explorer/inspector, and baseline test suites implemented.
-2026-03-13 11:21 +0700 | FIX | Resolved config path handling for ~/... source paths causing backend startup failure.
-2026-03-13 11:36 +0700 | SCAFFOLD | Added tests/ scaffold (fixtures, setup, scripts, load generator, smoke checks).
-2026-03-13 11:36 +0700 | DOCS | Added docs pack: AGENTS-README, ARCHITECTURE, USER-GUIDE, CONFIG-REFERENCE, AGENTS-HANDOFF.
-2026-03-13 21:54 +0700 | ROBUSTNESS | Hardened normalization/ingestion for nested provider/tool logs, unicode-safe parsing, and trailing-line flush without newline.
