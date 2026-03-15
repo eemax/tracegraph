@@ -1,4 +1,4 @@
-import type { SseEnvelope } from '@observe-graph/shared';
+import type { SseEnvelope } from '@tracegraph/shared';
 
 type Subscriber = (payload: SseEnvelope) => void;
 

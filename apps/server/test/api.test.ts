@@ -15,7 +15,7 @@ function parseSseChunk(chunk: string) {
 
 describe('HTTP API integration', () => {
   it('provides cursor pagination and multi-source ordering', async () => {
-    await withTempDir('observe-graph-api-', async (dir) => {
+    await withTempDir('tracegraph-api-', async (dir) => {
       const sourceAPath = path.join(dir, 'a.jsonl');
       const sourceBPath = path.join(dir, 'b.jsonl');
       await writeFile(sourceAPath, '', 'utf8');
@@ -44,7 +44,7 @@ describe('HTTP API integration', () => {
   });
 
   it('streams snapshot on connect and append events to SSE clients', async () => {
-    await withTempDir('observe-graph-sse-', async (dir) => {
+    await withTempDir('tracegraph-sse-', async (dir) => {
       const sourcePath = path.join(dir, 'source.jsonl');
       await writeFile(sourcePath, '', 'utf8');
 

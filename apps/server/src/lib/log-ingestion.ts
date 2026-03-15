@@ -1,13 +1,13 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
-import type { SourceStatus } from '@observe-graph/shared';
-import type { ObserveGraphConfig } from './config';
+import type { SourceStatus } from '@tracegraph/shared';
+import type { TracegraphConfig } from './config';
 import { EventStore } from './event-store';
 import { normalizeEvent } from './normalize';
 import { SseHub } from './sse-hub';
 
 interface SourceRuntime {
-  source: ObserveGraphConfig['sources'][number];
+  source: TracegraphConfig['sources'][number];
   status: SourceStatus;
   offset: number;
   line: number;
@@ -64,7 +64,7 @@ export class LogIngestionService {
 
   private seq = 1;
 
-  constructor(config: ObserveGraphConfig, store: EventStore, hub: SseHub, pollMs = 1000) {
+  constructor(config: TracegraphConfig, store: EventStore, hub: SseHub, pollMs = 1000) {
     this.store = store;
     this.hub = hub;
     this.pollMs = pollMs;

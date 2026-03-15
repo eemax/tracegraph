@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export OBSERVE_GRAPH_ROOT="$ROOT_DIR"
-export OBSERVE_GRAPH_TEST_FIXTURES="$ROOT_DIR/tests/fixtures"
-export OBSERVE_GRAPH_TEST_TMP="$ROOT_DIR/tests/tmp"
-export OBSERVE_GRAPH_TEST_RESULTS="$ROOT_DIR/tests/results"
+export TRACEGRAPH_ROOT="$ROOT_DIR"
+export TRACEGRAPH_TEST_FIXTURES="$ROOT_DIR/tests/fixtures"
+export TRACEGRAPH_TEST_TMP="$ROOT_DIR/tests/tmp"
+export TRACEGRAPH_TEST_RESULTS="$ROOT_DIR/tests/results"
 
-mkdir -p "$OBSERVE_GRAPH_TEST_TMP" "$OBSERVE_GRAPH_TEST_RESULTS"
+mkdir -p "$TRACEGRAPH_TEST_TMP" "$TRACEGRAPH_TEST_RESULTS"

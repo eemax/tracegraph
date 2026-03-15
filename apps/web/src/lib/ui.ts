@@ -1,4 +1,4 @@
-import type { NormalizedEvent } from '@observe-graph/shared';
+import type { NormalizedEvent } from '@tracegraph/shared';
 
 export interface UiFilters {
   from: string;

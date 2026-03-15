@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { access } from 'node:fs/promises';
 import { Elysia } from 'elysia';
-import type { EventFilterQuery, EventListResponse, SseEnvelope } from '@observe-graph/shared';
-import { loadConfig, type ObserveGraphConfig } from './config';
+import type { EventFilterQuery, EventListResponse, SseEnvelope } from '@tracegraph/shared';
+import { loadConfig, type TracegraphConfig } from './config';
 import { EventStore } from './event-store';
 import { LogIngestionService } from './log-ingestion';
 import { SseHub } from './sse-hub';
@@ -15,7 +15,7 @@ interface ServerOptions {
 
 interface ServerContext {
   app: Elysia;
-  config: ObserveGraphConfig;
+  config: TracegraphConfig;
   store: EventStore;
   hub: SseHub;
   ingestion: LogIngestionService;

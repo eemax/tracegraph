@@ -2,7 +2,7 @@
 
 ## Overview
 
-Observe Graph is a Bun monorepo with three major packages:
+Tracegraph is a Bun monorepo with three major packages:
 
 - `apps/server`: Elysia API + log ingestion + SSE fanout.
 - `apps/web`: SvelteKit frontend for explorer/inspector UI.
@@ -10,7 +10,7 @@ Observe Graph is a Bun monorepo with three major packages:
 
 ## Data Flow
 
-1. Server loads `observe-graph.config.yaml`.
+1. Server loads `tracegraph.config.yaml`.
 2. `LogIngestionService` tails configured JSONL files.
 3. Each valid line is normalized into `NormalizedEvent`.
 4. Events are inserted into a 100k-capacity ring store (`EventStore`).

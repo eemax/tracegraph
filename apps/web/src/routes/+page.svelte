@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { EventListResponse, NormalizedEvent, SseEnvelope, SourceStatus } from '@observe-graph/shared';
+  import type { EventListResponse, NormalizedEvent, SseEnvelope, SourceStatus } from '@tracegraph/shared';
   import {
     buildEventTypeGroups,
     buildQueryString,

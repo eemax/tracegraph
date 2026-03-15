@@ -1,6 +1,6 @@
 # Testing Scaffold
 
-This directory is the centralized test harness for Observe Graph.
+This directory is the centralized test harness for Tracegraph.
 
 ## Goals
 

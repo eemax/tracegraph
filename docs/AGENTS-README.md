@@ -4,7 +4,7 @@ This document defines working conventions for human/AI agents in this repository
 
 ## Objectives
 
-- Keep Observe Graph operable on LAN (`0.0.0.0`) with no auth for v1.
+- Keep Tracegraph operable on LAN (`0.0.0.0`) with no auth for v1.
 - Preserve JSONL ingestion correctness and SSE stability.
 - Avoid breaking shared type contracts in `packages/shared` without coordinated updates.
 
@@ -27,7 +27,7 @@ bun run dev
 - Backend logic: `apps/server/src/lib/*`
 - Frontend behavior: `apps/web/src/routes/+page.svelte`, `apps/web/src/lib/*`
 - Shared contracts: `packages/shared/src/index.ts`
-- Config model: `observe-graph.config.yaml`, `apps/server/src/lib/config.ts`
+- Config model: `tracegraph.config.yaml`, `apps/server/src/lib/config.ts`
 
 ## High-Risk Areas
 

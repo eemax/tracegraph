@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NormalizedEvent } from '@observe-graph/shared';
+import type { NormalizedEvent } from '@tracegraph/shared';
 import {
   buildEventTypeGroups,
   buildQueryString,

@@ -1,4 +1,4 @@
-import type { EventFilterQuery, EventListResponse, NormalizedEvent } from '@observe-graph/shared';
+import type { EventFilterQuery, EventListResponse, NormalizedEvent } from '@tracegraph/shared';
 import { toSearchText } from './normalize';
 
 interface IndexBucket {

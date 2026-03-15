@@ -12,7 +12,7 @@ export async function withTempDir(prefix: string, run: (dir: string) => Promise<
 }
 
 export async function createConfig(dir: string, logPath: string, extraSources: Array<{ id: string; label: string; path: string; color?: string }> = []): Promise<string> {
-  const configPath = path.join(dir, 'observe-graph.config.yaml');
+  const configPath = path.join(dir, 'tracegraph.config.yaml');
   const sources = [
     {
       id: 'source-a',

@@ -1,14 +1,14 @@
 # Config Reference
 
-All config is loaded from `observe-graph.config.yaml` unless overridden by `OBSERVE_GRAPH_CONFIG`.
+All config is loaded from `tracegraph.config.yaml` unless overridden by `TRACEGRAPH_CONFIG`.
 
 ## Resolution Rules
 
-1. If `OBSERVE_GRAPH_CONFIG` is set, that path is used.
+1. If `TRACEGRAPH_CONFIG` is set, that path is used.
 2. Otherwise server searches:
-   - `./observe-graph.config.yaml`
-   - `../observe-graph.config.yaml`
-   - `../../observe-graph.config.yaml`
+   - `./tracegraph.config.yaml`
+   - `../tracegraph.config.yaml`
+   - `../../tracegraph.config.yaml`
 3. Path values support:
    - absolute paths
    - relative paths (relative to config file directory)
@@ -79,7 +79,7 @@ Each `sources[]` item:
 
 ## Environment Variables
 
-### `OBSERVE_GRAPH_CONFIG`
+### `TRACEGRAPH_CONFIG`
 
 - Type: `string`
 - Required: no

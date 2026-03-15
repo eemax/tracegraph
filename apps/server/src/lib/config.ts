@@ -2,9 +2,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { access, readFile } from 'node:fs/promises';
 import YAML from 'yaml';
-import type { SourceConfig } from '@observe-graph/shared';
+import type { SourceConfig } from '@tracegraph/shared';
 
-export interface ObserveGraphConfig {
+export interface TracegraphConfig {
   server: {
     host: string;
     port: number;
@@ -20,8 +20,8 @@ interface RawConfig {
   sources?: SourceConfig[];
 }
 
-export async function loadConfig(configPath?: string): Promise<ObserveGraphConfig> {
-  const resolvedConfigPath = await resolveConfigPath(configPath ?? process.env.OBSERVE_GRAPH_CONFIG);
+export async function loadConfig(configPath?: string): Promise<TracegraphConfig> {
+  const resolvedConfigPath = await resolveConfigPath(configPath ?? process.env.TRACEGRAPH_CONFIG);
   const rawContent = await readFile(resolvedConfigPath, 'utf8');
   const parsed = YAML.parse(rawContent) as RawConfig;
   const configDir = path.dirname(resolvedConfigPath);
@@ -61,9 +61,9 @@ async function resolveConfigPath(configPath?: string): Promise<string> {
   }
 
   const candidates = [
-    path.resolve(process.cwd(), 'observe-graph.config.yaml'),
-    path.resolve(process.cwd(), '..', 'observe-graph.config.yaml'),
-    path.resolve(process.cwd(), '..', '..', 'observe-graph.config.yaml')
+    path.resolve(process.cwd(), 'tracegraph.config.yaml'),
+    path.resolve(process.cwd(), '..', 'tracegraph.config.yaml'),
+    path.resolve(process.cwd(), '..', '..', 'tracegraph.config.yaml')
   ];
 
   for (const candidate of candidates) {
@@ -76,7 +76,7 @@ async function resolveConfigPath(configPath?: string): Promise<string> {
   }
 
   throw new Error(
-    `Could not find observe-graph.config.yaml. Looked in: ${candidates.join(', ')}. Set OBSERVE_GRAPH_CONFIG to override.`
+    `Could not find tracegraph.config.yaml. Looked in: ${candidates.join(', ')}. Set TRACEGRAPH_CONFIG to override.`
   );
 }
 

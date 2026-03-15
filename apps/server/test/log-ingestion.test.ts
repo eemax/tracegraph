@@ -4,12 +4,12 @@ import { describe, expect, it } from 'bun:test';
 import { EventStore } from '../src/lib/event-store';
 import { LogIngestionService } from '../src/lib/log-ingestion';
 import { SseHub } from '../src/lib/sse-hub';
-import type { ObserveGraphConfig } from '../src/lib/config';
+import type { TracegraphConfig } from '../src/lib/config';
 import { withTempDir } from './helpers';
 
 describe('LogIngestionService', () => {
   it('handles append, truncate, and rotation without crashing', async () => {
-    await withTempDir('observe-graph-ingestion-', async (dir) => {
+    await withTempDir('tracegraph-ingestion-', async (dir) => {
       const logPath = path.join(dir, 'logs.jsonl');
       await writeFile(
         logPath,
@@ -17,7 +17,7 @@ describe('LogIngestionService', () => {
         'utf8'
       );
 
-      const config: ObserveGraphConfig = {
+      const config: TracegraphConfig = {
         server: { host: '0.0.0.0', port: 4317 },
         sources: [
           {
@@ -55,11 +55,11 @@ describe('LogIngestionService', () => {
   });
 
   it('increments malformed line stats and keeps processing', async () => {
-    await withTempDir('observe-graph-ingestion-', async (dir) => {
+    await withTempDir('tracegraph-ingestion-', async (dir) => {
       const logPath = path.join(dir, 'logs.jsonl');
       await writeFile(logPath, 'not-json\n{"timestamp":"2026-03-13T03:46:49.060Z","event":"ok"}\n', 'utf8');
 
-      const config: ObserveGraphConfig = {
+      const config: TracegraphConfig = {
         server: { host: '0.0.0.0', port: 4317 },
         sources: [
           {
@@ -85,7 +85,7 @@ describe('LogIngestionService', () => {
   });
 
   it('parses a trailing JSON line without newline after idle polls', async () => {
-    await withTempDir('observe-graph-ingestion-', async (dir) => {
+    await withTempDir('tracegraph-ingestion-', async (dir) => {
       const logPath = path.join(dir, 'logs.jsonl');
       await writeFile(
         logPath,
@@ -93,7 +93,7 @@ describe('LogIngestionService', () => {
         'utf8'
       );
 
-      const config: ObserveGraphConfig = {
+      const config: TracegraphConfig = {
         server: { host: '0.0.0.0', port: 4317 },
         sources: [
           {

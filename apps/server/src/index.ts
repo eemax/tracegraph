@@ -10,7 +10,7 @@ server.app.listen({
 });
 
 console.log(
-  `[observe-graph] listening on http://${server.config.server.host}:${server.config.server.port} with ${server.config.sources.length} source(s)`
+  `[tracegraph] listening on http://${server.config.server.host}:${server.config.server.port} with ${server.config.sources.length} source(s)`
 );
 
 const shutdown = () => {

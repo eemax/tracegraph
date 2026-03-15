@@ -1,5 +1,5 @@
 {
-  "name": "@observe-graph/server",
+  "name": "@tracegraph/server",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@observe-graph/shared": "workspace:*",
+    "@tracegraph/shared": "workspace:*",
     "elysia": "^1.4.16",
     "yaml": "^2.8.1"
   },

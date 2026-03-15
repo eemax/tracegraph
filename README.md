@@ -1,6 +1,6 @@
-# Observe Graph
+# Tracegraph
 
-Observe Graph is a TypeScript-based visual layer for observability logs. It ingests JSONL log files, indexes up to 100k events in memory, and exposes a terminal-inspired UI with an event explorer + event inspector.
+Tracegraph is a tracing tool for observability mode in agent-commander. It ingests JSONL log files, indexes up to 100k events in memory, and exposes a terminal-inspired UI with an event explorer + event inspector.
 
 ## Stack
 
@@ -37,7 +37,7 @@ bun run dev:web
 
 ## Configuration
 
-Log sources are configured in `observe-graph.config.yaml`:
+Log sources are configured in `tracegraph.config.yaml`:
 
 ```yaml
 server:

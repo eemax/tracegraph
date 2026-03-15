@@ -1,5 +1,5 @@
 {
-  "name": "@observe-graph/web",
+  "name": "@tracegraph/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@observe-graph/shared": "workspace:*",
+    "@tracegraph/shared": "workspace:*",
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.48.1",
     "svelte": "^5.42.2"

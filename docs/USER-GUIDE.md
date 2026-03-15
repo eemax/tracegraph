@@ -18,7 +18,7 @@ bun run dev
 
 ## Configure Log Sources
 
-Edit `observe-graph.config.yaml` and set each source path to a JSONL file.
+Edit `tracegraph.config.yaml` and set each source path to a JSONL file.
 
 Example:
 

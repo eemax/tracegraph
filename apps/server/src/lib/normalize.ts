@@ -1,4 +1,4 @@
-import type { EventDerived, NormalizedEvent } from '@observe-graph/shared';
+import type { EventDerived, NormalizedEvent } from '@tracegraph/shared';
 
 interface NormalizeContext {
   id: string;
