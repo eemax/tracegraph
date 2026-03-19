@@ -17,6 +17,7 @@ bun run test:smoke        # bash API health check
 
 - `apps/server/test/` — server unit + integration tests
 - `apps/web/src/lib/*.test.ts` — UI helper unit tests
+- `apps/web/src/lib/state/*.test.ts` — explorer state helper tests
 - `apps/web/e2e/` — Playwright E2E tests
 - `tests/fixtures/` — shared JSONL fixtures
 - `tests/setup/` — shared env and path helpers
@@ -32,6 +33,7 @@ bun run test:smoke        # bash API health check
 | `apps/server/test/normalize.test.ts` | Event normalization, non-object rejection |
 | `apps/server/test/event-store.test.ts` | Filter combinations, search, ring buffer overflow |
 | `apps/web/src/lib/ui.test.ts` | Query string generation, client-side filtering, trace timeline depth |
+| `apps/web/src/lib/state/explorer.test.ts` | State helper behavior for merge/de-dup, parsed field projection, default filter model |
 
 ### Integration
 
@@ -44,7 +46,7 @@ bun run test:smoke        # bash API health check
 
 | File | Covers |
 |------|--------|
-| `apps/web/e2e/smoke.spec.ts` | App renders, explorer rows visible, inspector interaction |
+| `apps/web/e2e/smoke.spec.ts` | App renders, event selection, inspector tab switching, filter apply/reset workflow |
 
 ### Planned
 

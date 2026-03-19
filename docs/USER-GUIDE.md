@@ -36,11 +36,18 @@ sources:
 
 - Filter by `event`, `stage`, `origin`, `traceId`, `chatId`.
 - Use `Search` for full-text query on raw event payload JSON.
+- Click `Apply` to run filters and `Reset` to clear all fields.
+- Switch group mode between `Types` and `Traces` in the group sidebar.
 - Arrow keys move selection in the explorer list.
+- Desktop layout uses draggable panes:
+  - outer split: Event Feed vs Event Inspector
+  - inner split: Group Sidebar vs Event List
+- Mobile layout keeps inspector visible and opens groups from the `Groups` sheet button.
 - Inspector tabs:
   - `Parsed`: important structured fields.
   - `Raw JSON`: full event payload.
   - `Trace Timeline`: ordered events for the active trace.
+- Connection state badge shows `Connecting`, `Live`, `Reconnecting`, or `Disconnected`.
 
 ## Useful Endpoints
 

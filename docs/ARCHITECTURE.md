@@ -8,6 +8,38 @@ Tracegraph is a Bun monorepo with three major packages:
 - `apps/web`: SvelteKit frontend for explorer/inspector UI.
 - `packages/shared`: shared TypeScript interfaces for API payloads and events.
 
+## Web UI Module Layout
+
+The web explorer is now split into state orchestration, API helpers, and focused feature components:
+
+```text
+apps/web/src/
+  app.css
+  routes/
+    +layout.svelte
+    +page.svelte
+  lib/
+    api.ts
+    ui.ts
+    state/
+      explorer.svelte.ts
+    components/
+      explorer/
+        ExplorerShell.svelte
+        TopbarStats.svelte
+        FilterPanel.svelte
+        SourceStatusStrip.svelte
+        GroupSidebar.svelte
+        EventVirtualList.svelte
+        InspectorPanel.svelte
+      ui/
+        ...shadcn-svelte primitives...
+```
+
+- `lib/state/explorer.svelte.ts` owns runtime behavior (filters, paging, SSE, selection, virtualization, inspector tab/trace loading).
+- `lib/api.ts` is the thin boundary for `/api/events` and `/api/stream`.
+- `routes/+page.svelte` is composition-only and mounts `ExplorerShell`.
+
 ## Data Flow
 
 1. Server loads `tracegraph.config.yaml`.
@@ -17,6 +49,13 @@ Tracegraph is a Bun monorepo with three major packages:
 5. `SseHub` publishes `append` and `source_status` envelopes.
 6. UI receives initial `snapshot` + ongoing SSE updates.
 7. Explorer and inspector render filtered event state.
+
+On the client:
+
+1. `ExplorerState.start()` loads initial events (`/api/events`) and opens SSE (`/api/stream`).
+2. SSE `snapshot`/`append`/`source_status` envelopes update state in-place.
+3. Derived state computes groups, selected event, virtual list window, and inspector payload.
+4. Explorer components render from one-way state reads and call state methods for mutations.
 
 ## Storage and Indexing
 
