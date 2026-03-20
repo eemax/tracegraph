@@ -1,14 +1,12 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
 import {
-  buildEventTypeGroups,
   buildTraceGroups,
-  getEventType,
   getTraceGroupKey,
   type EventTypeGroup,
   type UiFilters
 } from '../ui';
 
-export type GroupMode = 'types' | 'traces';
+export type GroupMode = 'traces';
 
 export interface VirtualWindow {
   startIndex: number;
@@ -25,42 +23,25 @@ function hasText(value: string): boolean {
   return value.trim().length > 0;
 }
 
+function normalizeEventTypes(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+}
+
 export function filtersEqual(a: UiFilters, b: UiFilters): boolean {
-  return (
-    a.from === b.from &&
-    a.to === b.to &&
-    a.event === b.event &&
-    a.stage === b.stage &&
-    a.origin === b.origin &&
-    a.traceId === b.traceId &&
-    a.chatId === b.chatId &&
-    a.q === b.q
-  );
+  const aTypes = normalizeEventTypes(a.eventTypes);
+  const bTypes = normalizeEventTypes(b.eventTypes);
+  return aTypes.length === bTypes.length && aTypes.every((value, index) => value === bTypes[index]) && a.q === b.q;
 }
 
 export function filtersHaveValues(filters: UiFilters): boolean {
-  return (
-    filters.from !== '' ||
-    filters.to !== '' ||
-    hasText(filters.event) ||
-    hasText(filters.stage) ||
-    hasText(filters.origin) ||
-    hasText(filters.traceId) ||
-    hasText(filters.chatId) ||
-    hasText(filters.q)
-  );
+  return filters.eventTypes.some(hasText) || hasText(filters.q);
 }
 
 export function buildGroups(events: NormalizedEvent[], mode: GroupMode): EventTypeGroup[] {
-  return mode === 'types' ? buildEventTypeGroups(events) : buildTraceGroups(events);
+  return buildTraceGroups(events);
 }
 
 export function isEventInGroup(event: NormalizedEvent, mode: GroupMode, groupKey: string): boolean {
-  if (mode === 'types') {
-    const type = getEventType(event);
-    return type === groupKey || type.startsWith(`${groupKey}.`);
-  }
-
   return getTraceGroupKey(event) === groupKey;
 }
 

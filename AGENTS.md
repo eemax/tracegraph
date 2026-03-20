@@ -10,8 +10,8 @@ bun run test
 bun run dev
 ```
 
-- UI: http://127.0.0.1:5173
-- API: http://127.0.0.1:4317/api/health
+- UI: http://127.0.0.1:51739
+- API: http://127.0.0.1:48292/api/health
 
 ## Monorepo layout
 
@@ -71,7 +71,7 @@ Tests live alongside their code:
 | `GET /api/events/:id` | Single event by ID |
 | `GET /api/stream` | SSE stream (snapshot, append, source_status) |
 
-Query params for `/api/events`: `cursor`, `limit`, `from`, `to`, `event`, `stage`, `origin`, `traceId`, `chatId`, `q`.
+Query params for `/api/events`: `cursor`, `limit`, `from`, `to`, `eventType`, `event`, `stage`, `origin`, `traceId`, `chatId`, `q`.
 
 ## Config
 
@@ -80,7 +80,7 @@ Config file: `tracegraph.config.yaml` (searched in `.`, `..`, `../..`; override 
 ```yaml
 server:
   host: 0.0.0.0    # default
-  port: 4317        # default
+  port: 48292        # default
 sources:
   - id: telegram-main
     label: Telegram Main Flow
@@ -96,7 +96,7 @@ Before any handoff, verify:
 
 1. `bun run test` passes
 2. `bun run build` passes
-3. `curl http://127.0.0.1:4317/api/health` returns `{"ok":true}`
+3. `curl http://127.0.0.1:48292/api/health` returns `{"ok":true}`
 
 ## Open work
 

@@ -2,11 +2,21 @@ import type { EventFilterQuery, EventListResponse, NormalizedEvent } from '@trac
 import { toSearchText } from './normalize';
 
 interface IndexBucket {
+  eventType: Map<string, Set<string>>;
   event: Map<string, Set<string>>;
   stage: Map<string, Set<string>>;
   origin: Map<string, Set<string>>;
   traceId: Map<string, Set<string>>;
   chatId: Map<string, Set<string>>;
+}
+
+function getEventType(event: NormalizedEvent): string {
+  const derivedType = event.derived?.eventType?.trim();
+  if (derivedType) {
+    return derivedType;
+  }
+
+  return event.event.trim() || 'unknown';
 }
 
 function addToIndex(index: Map<string, Set<string>>, key: string | undefined, id: string): void {
@@ -39,6 +49,16 @@ function intersectSets(a: Set<string>, b: Set<string>): Set<string> {
   for (const item of small) {
     if (large.has(item)) {
       out.add(item);
+    }
+  }
+  return out;
+}
+
+function unionSets(sets: Set<string>[]): Set<string> {
+  const out = new Set<string>();
+  for (const set of sets) {
+    for (const value of set) {
+      out.add(value);
     }
   }
   return out;
@@ -83,6 +103,7 @@ export class EventStore {
   private readonly searchTextById = new Map<string, string>();
 
   private readonly indexes: IndexBucket = {
+    eventType: new Map(),
     event: new Map(),
     stage: new Map(),
     origin: new Map(),
@@ -136,6 +157,7 @@ export class EventStore {
     this.byId.set(event.id, event);
     this.searchTextById.set(event.id, toSearchText(event));
 
+    addToIndex(this.indexes.eventType, getEventType(event), event.id);
     addToIndex(this.indexes.event, event.event, event.id);
     addToIndex(this.indexes.stage, event.stage, event.id);
     addToIndex(this.indexes.origin, event.trace?.origin, event.id);
@@ -145,6 +167,7 @@ export class EventStore {
     if (evicted) {
       this.byId.delete(evicted.id);
       this.searchTextById.delete(evicted.id);
+      removeFromIndex(this.indexes.eventType, getEventType(evicted), evicted.id);
       removeFromIndex(this.indexes.event, evicted.event, evicted.id);
       removeFromIndex(this.indexes.stage, evicted.stage, evicted.id);
       removeFromIndex(this.indexes.origin, evicted.trace?.origin, evicted.id);
@@ -199,6 +222,12 @@ export class EventStore {
   private resolveCandidateSet(query: EventFilterQuery): Set<string> | null {
     const constraints: Array<Set<string> | null> = [];
 
+    const rawEventTypes = Array.isArray(query.eventType) ? query.eventType : query.eventType ? [query.eventType] : [];
+    const eventTypes = [...new Set(rawEventTypes.map((value) => value.trim()).filter(Boolean))];
+    if (eventTypes.length > 0) {
+      const perTypeSets = eventTypes.map((eventType) => this.indexes.eventType.get(eventType) ?? new Set<string>());
+      constraints.push(unionSets(perTypeSets));
+    }
     if (query.event) {
       constraints.push(this.indexes.event.get(query.event) ?? new Set());
     }

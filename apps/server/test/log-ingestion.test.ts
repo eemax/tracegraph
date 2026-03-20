@@ -18,7 +18,7 @@ describe('LogIngestionService', () => {
       );
 
       const config: TracegraphConfig = {
-        server: { host: '0.0.0.0', port: 4317 },
+        server: { host: '0.0.0.0', port: 48292 },
         sources: [
           {
             id: 'source-a',
@@ -60,7 +60,7 @@ describe('LogIngestionService', () => {
       await writeFile(logPath, 'not-json\n{"timestamp":"2026-03-13T03:46:49.060Z","event":"ok"}\n', 'utf8');
 
       const config: TracegraphConfig = {
-        server: { host: '0.0.0.0', port: 4317 },
+        server: { host: '0.0.0.0', port: 48292 },
         sources: [
           {
             id: 'source-a',
@@ -94,7 +94,7 @@ describe('LogIngestionService', () => {
       );
 
       const config: TracegraphConfig = {
-        server: { host: '0.0.0.0', port: 4317 },
+        server: { host: '0.0.0.0', port: 48292 },
         sources: [
           {
             id: 'source-a',

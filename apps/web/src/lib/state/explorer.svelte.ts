@@ -11,7 +11,7 @@ import {
 import { ExplorerDataState, type ConnectionState } from './explorer-data.svelte';
 import { ExplorerViewState, type InspectorTab } from './explorer-view.svelte';
 import { buildParsedFields, type ParsedField } from './explorer-helpers';
-import { highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem, type UiFilters } from '$lib/ui';
+import { getEventType, highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem, type UiFilters } from '$lib/ui';
 
 export type { ParsedField };
 export type { GroupMode, InspectorTab, ConnectionState };
@@ -46,6 +46,9 @@ export class ExplorerState {
 
   hasActiveFilters = $derived(this.data.hasActiveFilters);
   hasUnappliedFilterChanges = $derived(this.data.hasUnappliedFilters);
+  availableEventTypes = $derived(
+    [...new Set(this.data.events.map((event) => getEventType(event)))].sort((a, b) => a.localeCompare(b))
+  );
 
   constructor() {
     $effect(() => {
@@ -183,7 +186,7 @@ export class ExplorerState {
     await this.data.retryList();
   }
 
-  setFilter(key: keyof UiFilters, value: string): void {
+  setFilter(key: keyof UiFilters, value: string | string[]): void {
     this.data.setDraftFilter(key, value);
   }
 

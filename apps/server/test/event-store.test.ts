@@ -37,6 +37,36 @@ describe('EventStore query', () => {
     expect(filtered.items[0]?.seq).toBe(1);
   });
 
+  it('supports multi-select eventType filtering', () => {
+    const store = new EventStore(10);
+
+    store.add(
+      makeEvent(1, {
+        event: 'provider.request.started',
+        payload: { text: 'start' }
+      })
+    );
+    store.add(
+      makeEvent(2, {
+        event: 'provider.request.completed',
+        payload: { text: 'done' }
+      })
+    );
+    store.add(
+      makeEvent(3, {
+        event: 'tool.workflow.progress',
+        payload: { text: 'progress' }
+      })
+    );
+
+    const filtered = store.query({
+      eventType: ['provider.request.started', 'provider.request.completed']
+    });
+
+    expect(filtered.items).toHaveLength(2);
+    expect(filtered.items.map((item) => item.event)).toEqual(['provider.request.completed', 'provider.request.started']);
+  });
+
   it('caps storage and tracks dropped events', () => {
     const store = new EventStore(2);
     store.add(makeEvent(1));

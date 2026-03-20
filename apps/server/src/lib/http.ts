@@ -27,11 +27,27 @@ function sendSse(controller: ReadableStreamDefaultController<Uint8Array>, envelo
 }
 
 function parseQuery(query: Record<string, unknown>): EventFilterQuery {
+  const rawEventType = query.eventType;
+  const parsedEventType =
+    typeof rawEventType === 'string'
+      ? rawEventType
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : Array.isArray(rawEventType)
+        ? rawEventType
+            .filter((value): value is string => typeof value === 'string')
+            .flatMap((value) => value.split(','))
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : undefined;
+
   return {
     cursor: typeof query.cursor === 'string' ? query.cursor : undefined,
     limit: typeof query.limit === 'string' ? Number.parseInt(query.limit, 10) : undefined,
     from: typeof query.from === 'string' ? query.from : undefined,
     to: typeof query.to === 'string' ? query.to : undefined,
+    eventType: parsedEventType,
     event: typeof query.event === 'string' ? query.event : undefined,
     stage: typeof query.stage === 'string' ? query.stage : undefined,
     origin: typeof query.origin === 'string' ? query.origin : undefined,

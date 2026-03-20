@@ -1,13 +1,7 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
 
 export interface UiFilters {
-  from: string;
-  to: string;
-  event: string;
-  stage: string;
-  origin: string;
-  traceId: string;
-  chatId: string;
+  eventTypes: string[];
   q: string;
 }
 
@@ -166,11 +160,20 @@ export function buildTraceGroups(events: NormalizedEvent[]): EventTypeGroup[] {
     .sort(([aKey, a], [bKey, b]) => b.lastSeq - a.lastSeq || aKey.localeCompare(bKey))
     .map(([key, meta]) => ({
       key,
-      label: key === missingTraceGroupKey ? 'no-trace' : key,
+      label: formatTraceLabel(key),
       depth: 0,
       count: meta.count,
       isLeaf: true
     }));
+}
+
+export function formatTraceLabel(traceKey: string): string {
+  if (traceKey === missingTraceGroupKey) {
+    return 'no-trace';
+  }
+
+  const suffix = traceKey.slice(-4);
+  return `trace...${suffix}`;
 }
 
 function looksLikeStructuredJson(value: string): boolean {
@@ -258,18 +261,12 @@ export function highlightJsonSyntax(prettyJson: string): string {
   );
 }
 
-function toIsoFromLocalInput(value: string): string | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return undefined;
-  }
-  return parsed.toISOString();
-}
-
-export function buildQueryString(filters: UiFilters, cursor?: string | null, limit = 300): string {
+export function buildQueryString(
+  filters: UiFilters,
+  cursor?: string | null,
+  limit = 300,
+  options?: { traceId?: string }
+): string {
   const params = new URLSearchParams();
   params.set('limit', String(limit));
 
@@ -277,46 +274,23 @@ export function buildQueryString(filters: UiFilters, cursor?: string | null, lim
     params.set('cursor', cursor);
   }
 
-  const from = toIsoFromLocalInput(filters.from);
-  const to = toIsoFromLocalInput(filters.to);
-
-  if (from) params.set('from', from);
-  if (to) params.set('to', to);
-  if (filters.event.trim()) params.set('event', filters.event.trim());
-  if (filters.stage.trim()) params.set('stage', filters.stage.trim());
-  if (filters.origin.trim()) params.set('origin', filters.origin.trim());
-  if (filters.traceId.trim()) params.set('traceId', filters.traceId.trim());
-  if (filters.chatId.trim()) params.set('chatId', filters.chatId.trim());
+  for (const eventType of filters.eventTypes) {
+    const value = eventType.trim();
+    if (value) {
+      params.append('eventType', value);
+    }
+  }
   if (filters.q.trim()) params.set('q', filters.q.trim());
+  if (options?.traceId?.trim()) params.set('traceId', options.traceId.trim());
 
   return params.toString();
 }
 
 export function eventMatchesFilters(event: NormalizedEvent, filters: UiFilters): boolean {
-  if (filters.event.trim() && event.event !== filters.event.trim()) {
-    return false;
-  }
-  if (filters.stage.trim() && event.stage !== filters.stage.trim()) {
-    return false;
-  }
-  if (filters.origin.trim() && event.trace?.origin !== filters.origin.trim()) {
-    return false;
-  }
-  if (filters.traceId.trim() && event.trace?.traceId !== filters.traceId.trim()) {
-    return false;
-  }
-  if (filters.chatId.trim() && event.chatId !== filters.chatId.trim()) {
-    return false;
-  }
-  if (filters.from) {
-    const fromMs = new Date(filters.from).getTime();
-    if (!Number.isNaN(fromMs) && getTimestampMs(event) < fromMs) {
-      return false;
-    }
-  }
-  if (filters.to) {
-    const toMs = new Date(filters.to).getTime();
-    if (!Number.isNaN(toMs) && getTimestampMs(event) > toMs) {
+  const normalizedEventTypes = filters.eventTypes.map((value) => value.trim().toLowerCase()).filter(Boolean);
+  if (normalizedEventTypes.length > 0) {
+    const eventType = getEventType(event).toLowerCase();
+    if (!normalizedEventTypes.includes(eventType)) {
       return false;
     }
   }
@@ -335,7 +309,7 @@ export function formatTimestamp(iso: string): string {
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
-  return date.toLocaleString();
+  return date.toISOString();
 }
 
 export function buildTraceTimeline(events: NormalizedEvent[]): TimelineItem[] {

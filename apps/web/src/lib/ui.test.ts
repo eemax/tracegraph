@@ -6,6 +6,7 @@ import {
   buildTraceGroups,
   buildTraceTimeline,
   eventMatchesFilters,
+  formatTraceLabel,
   getEventType,
   getTraceGroupKey,
   highlightJsonSyntax,
@@ -48,13 +49,7 @@ describe('ui helpers', () => {
   it('builds query string from active filters', () => {
     const query = buildQueryString(
       {
-        from: '',
-        to: '',
-        event: 'tool.workflow.progress',
-        stage: 'completed',
-        origin: 'tool',
-        traceId: 'trace-1',
-        chatId: 'chat-1',
+        eventTypes: ['tool.workflow.progress', 'provider.openai.request.started'],
         q: 'world'
       },
       '40',
@@ -63,21 +58,16 @@ describe('ui helpers', () => {
 
     expect(query).toContain('cursor=40');
     expect(query).toContain('limit=100');
-    expect(query).toContain('event=tool.workflow.progress');
+    expect(query).toContain('eventType=tool.workflow.progress');
+    expect(query).toContain('eventType=provider.openai.request.started');
     expect(query).toContain('q=world');
   });
 
-  it('matches event against full filter set', () => {
+  it('matches event against supported filters', () => {
     const event = makeEvent(1);
 
     const matched = eventMatchesFilters(event, {
-      from: '',
-      to: '',
-      event: 'tool.workflow.progress',
-      stage: 'completed',
-      origin: 'tool',
-      traceId: 'trace-1',
-      chatId: 'chat-1',
+      eventTypes: ['tool.workflow.progress'],
       q: 'hello'
     });
 
@@ -147,7 +137,7 @@ describe('ui helpers', () => {
     ]);
 
     expect(grouped.map((group) => group.key)).toEqual(['trace-2', 'trace-1', missingTraceGroupKey]);
-    expect(grouped.map((group) => group.label)).toEqual(['trace-2', 'trace-1', 'no-trace']);
+    expect(grouped.map((group) => group.label)).toEqual(['trace...ce-2', 'trace...ce-1', 'no-trace']);
     expect(grouped.find((group) => group.key === 'trace-1')?.count).toBe(2);
     expect(grouped.every((group) => group.depth === 0)).toBe(true);
     expect(grouped.every((group) => group.isLeaf)).toBe(true);
@@ -159,6 +149,10 @@ describe('ui helpers', () => {
 
     expect(getTraceGroupKey(traced)).toBe('trace-1');
     expect(getTraceGroupKey(untraced)).toBe(missingTraceGroupKey);
+  });
+
+  it('formats trace ids to last 4 chars label', () => {
+    expect(formatTraceLabel('trace_01KKKS5XVT0GQWTEJT4NV4G3K0')).toBe('trace...G3K0');
   });
 
   it('parses stringified nested json for raw inspector display', () => {

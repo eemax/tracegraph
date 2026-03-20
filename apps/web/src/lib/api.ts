@@ -32,7 +32,7 @@ export async function fetchEvents(filters: UiFilters, cursor?: string | null, li
 }
 
 export async function fetchTraceEvents(filters: UiFilters, traceId: string, limit = 500): Promise<EventListResponse> {
-  const query = buildQueryString({ ...filters, traceId }, null, limit);
+  const query = buildQueryString(filters, null, limit, { traceId });
   const response = await fetch(`/api/events?${query}`);
   return parseJsonResponse<EventListResponse>(response);
 }

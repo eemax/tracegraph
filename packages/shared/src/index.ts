@@ -50,6 +50,7 @@ export interface EventFilterQuery {
   limit?: number;
   from?: string;
   to?: string;
+  eventType?: string | string[];
   event?: string;
   stage?: string;
   origin?: string;

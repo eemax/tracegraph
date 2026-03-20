@@ -15,13 +15,7 @@ function toDisplay(value: unknown): string {
 
 export function createDefaultFilters(): UiFilters {
   return {
-    from: '',
-    to: '',
-    event: '',
-    stage: '',
-    origin: '',
-    traceId: '',
-    chatId: '',
+    eventTypes: [],
     q: ''
   };
 }

@@ -3,18 +3,30 @@
   import { Input } from '$lib/components/ui/input/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
-  import type { UiFilters } from '$lib/ui';
 
   let { state }: { state: ExplorerState } = $props();
 
-  function onInput(key: keyof UiFilters, event: Event): void {
+  function onTextInput(key: 'q', event: Event): void {
     const target = event.currentTarget as HTMLInputElement;
     state.setFilter(key, target.value);
+  }
+
+  function toggleEventType(value: string, checked: boolean): void {
+    const next = new Set(state.draftFilters.eventTypes);
+    if (checked) {
+      next.add(value);
+    } else {
+      next.delete(value);
+    }
+    state.setFilter(
+      'eventTypes',
+      [...next].sort((a, b) => a.localeCompare(b))
+    );
   }
 </script>
 
 <form
-  class="grid grid-cols-1 gap-2 border-y px-3 py-2 sm:grid-cols-2 lg:grid-cols-4"
+  class="grid grid-cols-1 gap-2 border-y px-3 py-2 sm:grid-cols-2"
   onsubmit={(event) => {
     event.preventDefault();
     void state.applyFilters();
@@ -22,92 +34,49 @@
   data-testid="filter-form"
 >
   <Label class="grid gap-1 text-xs">
-    Event
-    <Input
-      value={state.draftFilters.event}
-      placeholder="tool.workflow.progress"
-      oninput={(event) => {
-        onInput('event', event);
-      }}
-      data-testid="filter-event"
-    />
+    Event types
+    <details class="relative" data-testid="filter-event-types">
+      <summary class="bg-background border-input focus-visible:ring-ring/50 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:ring-[3px]">
+        {#if state.draftFilters.eventTypes.length === 0}
+          All event types
+        {:else}
+          {state.draftFilters.eventTypes.length} selected
+        {/if}
+      </summary>
+
+      <div class="bg-popover text-popover-foreground absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border p-2 shadow-md">
+        {#if state.availableEventTypes.length === 0}
+          <p class="text-muted-foreground text-xs">No event types available yet.</p>
+        {:else}
+          <div class="space-y-1">
+            {#each state.availableEventTypes as eventType (eventType)}
+              <label class="hover:bg-muted flex items-center gap-2 rounded px-1 py-1 text-xs">
+                <input
+                  type="checkbox"
+                  checked={state.draftFilters.eventTypes.includes(eventType)}
+                  onchange={(event) => {
+                    const target = event.currentTarget as HTMLInputElement;
+                    toggleEventType(eventType, target.checked);
+                  }}
+                />
+                <span class="truncate">{eventType}</span>
+              </label>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </details>
   </Label>
 
   <Label class="grid gap-1 text-xs">
-    Stage
-    <Input
-      value={state.draftFilters.stage}
-      placeholder="completed"
-      oninput={(event) => {
-        onInput('stage', event);
-      }}
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    Origin
-    <Input
-      value={state.draftFilters.origin}
-      placeholder="provider"
-      oninput={(event) => {
-        onInput('origin', event);
-      }}
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    Trace
-    <Input
-      value={state.draftFilters.traceId}
-      placeholder="trace_..."
-      oninput={(event) => {
-        onInput('traceId', event);
-      }}
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    Chat
-    <Input
-      value={state.draftFilters.chatId}
-      placeholder="8512871156"
-      oninput={(event) => {
-        onInput('chatId', event);
-      }}
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    Search
+    Payload text
     <Input
       value={state.draftFilters.q}
       placeholder="text in payload"
       oninput={(event) => {
-        onInput('q', event);
+        onTextInput('q', event);
       }}
       data-testid="filter-search"
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    From
-    <Input
-      type="datetime-local"
-      value={state.draftFilters.from}
-      oninput={(event) => {
-        onInput('from', event);
-      }}
-    />
-  </Label>
-
-  <Label class="grid gap-1 text-xs">
-    To
-    <Input
-      type="datetime-local"
-      value={state.draftFilters.to}
-      oninput={(event) => {
-        onInput('to', event);
-      }}
     />
   </Label>
 

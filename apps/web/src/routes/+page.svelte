@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-  <title>Observe Graph</title>
+  <title>Tracegraph</title>
 </svelte:head>
 
 <ExplorerShell {state} />

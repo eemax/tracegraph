@@ -51,13 +51,7 @@ describe('explorer state helpers', () => {
 
   it('creates empty filters by default', () => {
     expect(createDefaultFilters()).toEqual({
-      from: '',
-      to: '',
-      event: '',
-      stage: '',
-      origin: '',
-      traceId: '',
-      chatId: '',
+      eventTypes: [],
       q: ''
     });
   });

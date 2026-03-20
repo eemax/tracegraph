@@ -65,7 +65,7 @@ export class ExplorerDataState {
     this.eventIndex = new IncrementalEventIndex(eventCap);
   }
 
-  setDraftFilter(key: keyof UiFilters, value: string): void {
+  setDraftFilter(key: keyof UiFilters, value: string | string[]): void {
     const nextModels = setDraftFilterModel(
       { draftFilters: this.draftFilters, activeFilters: this.activeFilters },
       key,

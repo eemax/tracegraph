@@ -16,8 +16,8 @@ bun install
 bun run dev
 ```
 
-- UI: http://127.0.0.1:5173
-- API: http://127.0.0.1:4317/api/health
+- UI: http://127.0.0.1:51739
+- API: http://127.0.0.1:48292/api/health
 
 ## Configuration
 
@@ -26,7 +26,7 @@ Edit `tracegraph.config.yaml` to point at your JSONL log files:
 ```yaml
 server:
   host: 0.0.0.0
-  port: 4317
+  port: 48292
 sources:
   - id: telegram-main
     label: Telegram Main Flow

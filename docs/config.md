@@ -19,7 +19,7 @@ All config is loaded from `tracegraph.config.yaml` unless overridden by `TRACEGR
 ```yaml
 server:
   host: 0.0.0.0
-  port: 4317
+  port: 48292
 sources:
   - id: telegram-main
     label: Telegram Main Flow
@@ -40,7 +40,7 @@ sources:
 
 - Type: `number`
 - Required: no
-- Default: `4317`
+- Default: `48292`
 - Purpose: bind port for API + static web serving.
 
 ### `sources`

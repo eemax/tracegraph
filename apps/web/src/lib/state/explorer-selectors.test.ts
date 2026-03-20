@@ -45,16 +45,13 @@ describe('explorer selectors', () => {
       makeEvent(1, { event: 'provider.openai.request.started' })
     ];
 
-    const groups = buildGroups(events, 'types');
-    expect(groups.some((group) => group.key === 'provider.openai.request')).toBe(true);
+    const groups = buildGroups(events, 'traces');
+    expect(groups.map((group) => group.key)).toEqual(['trace-odd', 'trace-even']);
 
-    const filtered = selectFilteredEvents(events, 'types', 'provider.openai.request');
-    expect(filtered.map((event) => event.event)).toEqual([
-      'provider.openai.request.completed',
-      'provider.openai.request.started'
-    ]);
+    const filtered = selectFilteredEvents(events, 'traces', 'trace-odd');
+    expect(filtered.map((event) => event.id)).toEqual(['event-3', 'event-1']);
 
-    expect(selectFilteredEvents(events, 'types', allGroupsKey)).toEqual(events);
+    expect(selectFilteredEvents(events, 'traces', allGroupsKey)).toEqual(events);
   });
 
   it('computes virtualization windows for visible slices', () => {
@@ -68,13 +65,7 @@ describe('explorer selectors', () => {
 
   it('detects active filters and unapplied equality checks', () => {
     const base = {
-      from: '',
-      to: '',
-      event: '',
-      stage: '',
-      origin: '',
-      traceId: '',
-      chatId: '',
+      eventTypes: [],
       q: ''
     };
 

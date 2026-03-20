@@ -25,7 +25,7 @@ export async function createConfig(dir: string, logPath: string, extraSources: A
   const yaml = [
     'server:',
     '  host: 0.0.0.0',
-    '  port: 4317',
+    '  port: 48292',
     'sources:',
     ...sources.flatMap((source) => {
       const lines = [

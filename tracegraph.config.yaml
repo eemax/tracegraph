@@ -1,8 +1,8 @@
 server:
   host: 0.0.0.0
-  port: 4317
+  port: 48292
 sources:
   - id: telegram-main
     label: Telegram Main Flow
-    path: ~/agent-commander/.agent-commander/observability.jsonl
+    path: ~/opencommander-web/runtime/logs/observability.jsonl
     color: '#56d364'

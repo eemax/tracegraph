@@ -9,13 +9,7 @@ export interface FilterModels {
 
 function cloneFilters(filters: UiFilters): UiFilters {
   return {
-    from: filters.from,
-    to: filters.to,
-    event: filters.event,
-    stage: filters.stage,
-    origin: filters.origin,
-    traceId: filters.traceId,
-    chatId: filters.chatId,
+    eventTypes: [...filters.eventTypes],
     q: filters.q
   };
 }
@@ -30,7 +24,7 @@ export function createFilterModels(): FilterModels {
 export function setDraftFilter(
   models: FilterModels,
   key: keyof UiFilters,
-  value: string
+  value: string | string[]
 ): FilterModels {
   return {
     ...models,

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert/index.js';
-  import { Badge } from '$lib/components/ui/badge/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import * as Resizable from '$lib/components/ui/resizable/index.js';
   import * as Sheet from '$lib/components/ui/sheet/index.js';
@@ -51,11 +50,10 @@
 
   <div class="hidden min-h-0 flex-1 lg:block">
     <Resizable.ResizablePaneGroup direction="horizontal" class="h-full gap-2">
-      <Resizable.ResizablePane defaultSize={64} minSize={35}>
+      <Resizable.ResizablePane defaultSize={40} minSize={35}>
         <section class="flex h-full min-h-0 flex-col rounded-xl border bg-card text-card-foreground shadow-xs" aria-label="Event feed">
           <header class="flex items-center justify-between gap-2 px-4 py-2">
             <h2 class="text-xs font-semibold uppercase tracking-wide">Event Feed</h2>
-            <Badge variant={state.loading ? 'secondary' : 'default'}>{state.loading ? 'Loading...' : state.liveLabel}</Badge>
           </header>
 
           <FilterPanel {state} />
@@ -81,7 +79,7 @@
 
       <Resizable.ResizableHandle withHandle />
 
-      <Resizable.ResizablePane defaultSize={36} minSize={25}>
+      <Resizable.ResizablePane defaultSize={60} minSize={25}>
         <InspectorPanel {state} />
       </Resizable.ResizablePane>
     </Resizable.ResizablePaneGroup>
@@ -92,7 +90,6 @@
       <header class="flex items-center justify-between gap-2 px-4 py-2">
         <h2 class="text-xs font-semibold uppercase tracking-wide">Event Feed</h2>
         <div class="flex items-center gap-2">
-          <Badge variant={state.loading ? 'secondary' : 'default'}>{state.loading ? 'Loading...' : state.liveLabel}</Badge>
           <Button
             type="button"
             variant="outline"
@@ -129,7 +126,7 @@
   <Sheet.SheetContent side="left" class="w-full max-w-sm p-0 sm:max-w-sm" aria-label="Group selector">
     <Sheet.SheetHeader class="border-b px-4 py-3">
       <Sheet.SheetTitle>Groups</Sheet.SheetTitle>
-      <Sheet.SheetDescription>Switch grouping mode and pick a visible event set.</Sheet.SheetDescription>
+      <Sheet.SheetDescription>Pick the visible trace group.</Sheet.SheetDescription>
     </Sheet.SheetHeader>
 
     <div class="min-h-0 h-full">

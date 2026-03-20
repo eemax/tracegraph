@@ -17,10 +17,10 @@
   }
 </script>
 
-<header class="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-3 shadow-xs">
-  <h1 class="text-sm font-semibold tracking-wide">Observe Graph</h1>
+<header class="flex flex-wrap items-center justify-between gap-1.5 rounded-xl border bg-card px-3 py-2 shadow-xs">
+  <h1 class="text-base font-semibold tracking-wide">Tracegraph</h1>
 
-  <div class="flex flex-wrap items-center gap-1" aria-live="polite">
+  <div class="flex flex-wrap items-center gap-0.5" aria-live="polite">
     <Badge variant="outline">Total {state.total}</Badge>
     <Badge variant="outline">Dropped {state.dropped}</Badge>
     <Badge variant="outline">Loaded {state.events.length}</Badge>

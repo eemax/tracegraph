@@ -2,7 +2,7 @@
   import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert/index.js';
   import { Spinner } from '$lib/components/ui/spinner/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
-  import { formatTimestamp } from '$lib/ui';
+  import { formatTimestamp, formatTraceLabel, getTraceGroupKey } from '$lib/ui';
 
   let { state }: { state: ExplorerState } = $props();
 
@@ -14,6 +14,11 @@
         state.setListPane(null);
       }
     };
+  }
+
+  function selectTraceGroup(event: MouseEvent, traceGroupKey: string): void {
+    event.stopPropagation();
+    state.selectGroup(traceGroupKey);
   }
 </script>
 
@@ -47,9 +52,8 @@
         </div>
       {:else}
         {#each state.visibleRows as row (row.id)}
-          <button
+          <div
             id={`event-option-${row.id}`}
-            type="button"
             class={`event-row mb-1 flex h-[50px] w-full items-start justify-between gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors ${
               state.selectedId === row.id
                 ? 'border-primary bg-primary/10 text-foreground'
@@ -57,6 +61,12 @@
             }`}
             onclick={() => {
               state.selectEvent(row.id);
+            }}
+            onkeydown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                state.selectEvent(row.id);
+              }
             }}
             title={`${row.sourceLabel} • ${row.event}`}
             data-testid="event-row"
@@ -69,11 +79,19 @@
               <span class="inline-flex max-w-full items-center gap-2 truncate text-muted-foreground">
                 <span>{row.stage ?? 'n/a'}</span>
                 <span>{row.sourceLabel}</span>
-                <span>{row.trace?.origin ?? 'unknown'}</span>
+                <button
+                  type="button"
+                  class="hover:text-foreground rounded border px-1.5 py-0.5 leading-none"
+                  onclick={(event) => {
+                    selectTraceGroup(event, getTraceGroupKey(row));
+                  }}
+                >
+                  {formatTraceLabel(getTraceGroupKey(row))}
+                </button>
               </span>
             </div>
             <span class="shrink-0 text-muted-foreground">{formatTimestamp(row.timestamp)}</span>
-          </button>
+          </div>
         {/each}
       {/if}
 

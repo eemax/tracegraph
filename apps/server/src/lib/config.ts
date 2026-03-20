@@ -27,7 +27,7 @@ export async function loadConfig(configPath?: string): Promise<TracegraphConfig>
   const configDir = path.dirname(resolvedConfigPath);
 
   const host = parsed.server?.host ?? '0.0.0.0';
-  const port = Number(parsed.server?.port ?? 4317);
+  const port = Number(parsed.server?.port ?? 48292);
 
   if (!Array.isArray(parsed.sources) || parsed.sources.length === 0) {
     throw new Error(`No sources configured in ${resolvedConfigPath}`);

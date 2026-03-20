@@ -72,6 +72,7 @@ On the client:
 
 - In-memory ring buffer (capacity: 100,000).
 - Secondary indexes for:
+  - `eventType`
   - `event`
   - `stage`
   - `trace.origin`

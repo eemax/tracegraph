@@ -19,7 +19,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export class ExplorerViewState {
-  groupingMode = $state<GroupMode>('types');
+  groupingMode = $state<GroupMode>('traces');
   selectedGroup = $state(allGroupsKey);
   mobileGroupsOpen = $state(false);
 

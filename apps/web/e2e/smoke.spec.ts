@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('loads event feed and inspector', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { name: 'Observe Graph' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tracegraph' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Event Feed' })).toBeVisible();
 
   const firstEvent = page.locator('[data-testid="event-row"]:visible').first();
@@ -15,15 +15,15 @@ test('loads event feed and inspector', async ({ page }) => {
   await expect(page.locator('[data-testid="tab-content-raw"]:visible').first()).toBeVisible();
 });
 
-test('typing unapplied filters does not change visible list until apply', async ({ page }) => {
+test('editing unapplied filters does not change visible list until apply', async ({ page }) => {
   await page.goto('/');
 
   const rows = page.locator('[data-testid="event-row"]:visible');
   await expect(rows.first()).toBeVisible({ timeout: 15_000 });
   const beforeCount = await rows.count();
 
-  const filterEvent = page.locator('[data-testid="filter-event"]:visible').first();
-  await filterEvent.fill('definitely.no.match.event');
+  const filterSearch = page.locator('[data-testid="filter-search"]:visible').first();
+  await filterSearch.fill('definitely.no.match.event');
 
   await expect(page.locator('[data-testid="filter-unapplied"]:visible').first()).toBeVisible();
   await expect(page.locator('[data-testid="filter-apply"]:visible').first()).toBeEnabled();
@@ -35,7 +35,7 @@ test('typing unapplied filters does not change visible list until apply', async 
   await expect(page.getByText('No events yet').first()).toBeVisible();
 
   await page.locator('[data-testid="filter-reset"]:visible').first().click();
-  await expect(filterEvent).toHaveValue('');
+  await expect(filterSearch).toHaveValue('');
   await expect(page.locator('[data-testid="event-row"]:visible').first()).toBeVisible();
 });
 
