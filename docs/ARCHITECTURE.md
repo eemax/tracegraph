@@ -22,6 +22,11 @@ apps/web/src/
     api.ts
     ui.ts
     state/
+      explorer-data.svelte.ts
+      explorer-view.svelte.ts
+      explorer-selectors.ts
+      explorer-index.ts
+      explorer-filters.ts
       explorer.svelte.ts
     components/
       explorer/
@@ -36,7 +41,11 @@ apps/web/src/
         ...shadcn-svelte primitives...
 ```
 
-- `lib/state/explorer.svelte.ts` owns runtime behavior (filters, paging, SSE, selection, virtualization, inspector tab/trace loading).
+- `lib/state/explorer.svelte.ts` is a facade that wires data, view, and selector modules.
+- `lib/state/explorer-data.svelte.ts` owns fetch/SSE lifecycle, source status, counters, and error surface.
+- `lib/state/explorer-view.svelte.ts` owns selection, keyboard navigation, mobile sheets, and scroll/viewport state.
+- `lib/state/explorer-selectors.ts` contains pure grouped/filter/window selectors.
+- `lib/state/explorer-index.ts` provides incremental append indexing (`Map + orderedIds`) with a client cap.
 - `lib/api.ts` is the thin boundary for `/api/events` and `/api/stream`.
 - `routes/+page.svelte` is composition-only and mounts `ExplorerShell`.
 
@@ -52,10 +61,12 @@ apps/web/src/
 
 On the client:
 
-1. `ExplorerState.start()` loads initial events (`/api/events`) and opens SSE (`/api/stream`).
-2. SSE `snapshot`/`append`/`source_status` envelopes update state in-place.
-3. Derived state computes groups, selected event, virtual list window, and inspector payload.
-4. Explorer components render from one-way state reads and call state methods for mutations.
+1. `ExplorerState.start()` loads initial events with `activeFilters` and opens SSE (`/api/stream`).
+2. Filter controls write to `draftFilters`; only `Apply` promotes `draftFilters -> activeFilters`.
+3. `ExplorerDataState` ingests `snapshot`/`append`/`source_status` envelopes and updates incremental index structures.
+4. `ExplorerViewState` coordinates selection, keyboard navigation, and mobile inspector/group sheets.
+5. Pure selectors compute grouped views, filtered views, and virtualization windows consumed by the facade.
+6. Explorer components render from facade reads and call facade methods for mutations.
 
 ## Storage and Indexing
 
@@ -67,6 +78,12 @@ On the client:
   - `trace.traceId`
   - `chatId`
 - Lowercased raw JSON text cache per event for `q` filtering.
+
+Client-side explorer indexing:
+
+- `eventsById` map + `orderedIds` descending by `seq`.
+- Incremental upsert/reposition on append updates (no full-array re-sort per append).
+- Client memory cap defaults to 100,000 events.
 
 ## API Surface
 

@@ -33,7 +33,10 @@ bun run test:smoke        # bash API health check
 | `apps/server/test/normalize.test.ts` | Event normalization, non-object rejection |
 | `apps/server/test/event-store.test.ts` | Filter combinations, search, ring buffer overflow |
 | `apps/web/src/lib/ui.test.ts` | Query string generation, client-side filtering, trace timeline depth |
-| `apps/web/src/lib/state/explorer.test.ts` | State helper behavior for merge/de-dup, parsed field projection, default filter model |
+| `apps/web/src/lib/state/explorer.test.ts` | Parsed field projection and default filter helpers |
+| `apps/web/src/lib/state/explorer-filters.test.ts` | Draft vs active filter transitions (type/apply/reset) |
+| `apps/web/src/lib/state/explorer-index.test.ts` | Incremental append ordering, de-dup/update, cap trimming |
+| `apps/web/src/lib/state/explorer-selectors.test.ts` | Group/filter selectors and virtualization window outputs |
 
 ### Integration
 
@@ -46,7 +49,7 @@ bun run test:smoke        # bash API health check
 
 | File | Covers |
 |------|--------|
-| `apps/web/e2e/smoke.spec.ts` | App renders, event selection, inspector tab switching, filter apply/reset workflow |
+| `apps/web/e2e/smoke.spec.ts` | App render/selection, unapplied filter behavior, keyboard visibility, mobile inspector open/close retention |
 
 ### Planned
 

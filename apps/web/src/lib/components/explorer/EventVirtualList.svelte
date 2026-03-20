@@ -33,6 +33,10 @@
       use:registerListPane
       onscroll={state.onListScroll}
       data-testid="event-list"
+      role="listbox"
+      aria-label="Events"
+      aria-activedescendant={state.selectedId ? `event-option-${state.selectedId}` : undefined}
+      tabindex="0"
     >
       <div style={`height: ${state.topPadding}px;`} aria-hidden="true"></div>
 
@@ -44,6 +48,7 @@
       {:else}
         {#each state.visibleRows as row (row.id)}
           <button
+            id={`event-option-${row.id}`}
             type="button"
             class={`event-row mb-1 flex h-[50px] w-full items-start justify-between gap-2 rounded-md border px-3 py-2 text-left text-xs transition-colors ${
               state.selectedId === row.id
@@ -55,6 +60,9 @@
             }}
             title={`${row.sourceLabel} • ${row.event}`}
             data-testid="event-row"
+            role="option"
+            aria-selected={state.selectedId === row.id}
+            tabindex={state.selectedId === row.id ? 0 : -1}
           >
             <div class="min-w-0">
               <strong class="block truncate text-sm font-medium">{row.event}</strong>

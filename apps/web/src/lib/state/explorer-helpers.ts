@@ -66,18 +66,3 @@ export function buildParsedFields(event: NormalizedEvent): ParsedField[] {
 
   return fields.filter((field) => field.value !== notAvailable);
 }
-
-export function mergeUniqueTop(existing: NormalizedEvent[], incoming: NormalizedEvent[]): NormalizedEvent[] {
-  const seen = new Set<string>();
-  const out: NormalizedEvent[] = [];
-
-  for (const item of [...incoming, ...existing]) {
-    if (!seen.has(item.id)) {
-      seen.add(item.id);
-      out.push(item);
-    }
-  }
-
-  out.sort((a, b) => b.seq - a.seq);
-  return out;
-}

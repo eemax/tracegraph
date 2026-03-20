@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NormalizedEvent } from '@tracegraph/shared';
-import { buildParsedFields, createDefaultFilters, mergeUniqueTop } from './explorer-helpers';
+import { buildParsedFields, createDefaultFilters } from './explorer-helpers';
 
 function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): NormalizedEvent {
   return {
@@ -31,16 +31,6 @@ function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): Norma
 }
 
 describe('explorer state helpers', () => {
-  it('merges incoming events at top and de-duplicates by id', () => {
-    const existing = [makeEvent(3), makeEvent(2), makeEvent(1)];
-    const incoming = [makeEvent(4), makeEvent(3, { stage: 'updated' })];
-
-    const merged = mergeUniqueTop(existing, incoming);
-
-    expect(merged.map((event) => event.id)).toEqual(['event-4', 'event-3', 'event-2', 'event-1']);
-    expect(merged[1]?.stage).toBe('updated');
-  });
-
   it('builds parsed fields and omits unavailable values', () => {
     const parsed = buildParsedFields(
       makeEvent(1, {

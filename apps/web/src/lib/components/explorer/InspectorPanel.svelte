@@ -13,9 +13,24 @@
   import { formatTimestamp, getEventType } from '$lib/ui';
 
   let { state }: { state: ExplorerState } = $props();
+
+  function registerInspectorPane(node: HTMLElement): { destroy: () => void } {
+    state.setInspectorPane(node);
+
+    return {
+      destroy: () => {
+        state.setInspectorPane(null);
+      }
+    };
+  }
 </script>
 
-<section class="flex h-full min-h-0 flex-col rounded-xl border bg-card text-card-foreground shadow-xs" aria-label="Event inspector">
+<section
+  class="flex h-full min-h-0 flex-col rounded-xl border bg-card text-card-foreground shadow-xs"
+  aria-label="Event inspector"
+  use:registerInspectorPane
+  tabindex="-1"
+>
   <header class="flex items-center justify-between gap-2 border-b px-4 py-2">
     <h2 class="text-xs font-semibold uppercase tracking-wide">Event Inspector</h2>
     <span class="max-w-[18rem] truncate text-xs text-muted-foreground">

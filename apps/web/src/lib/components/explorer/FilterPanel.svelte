@@ -24,7 +24,7 @@
   <Label class="grid gap-1 text-xs">
     Event
     <Input
-      value={state.filters.event}
+      value={state.draftFilters.event}
       placeholder="tool.workflow.progress"
       oninput={(event) => {
         onInput('event', event);
@@ -36,7 +36,7 @@
   <Label class="grid gap-1 text-xs">
     Stage
     <Input
-      value={state.filters.stage}
+      value={state.draftFilters.stage}
       placeholder="completed"
       oninput={(event) => {
         onInput('stage', event);
@@ -47,7 +47,7 @@
   <Label class="grid gap-1 text-xs">
     Origin
     <Input
-      value={state.filters.origin}
+      value={state.draftFilters.origin}
       placeholder="provider"
       oninput={(event) => {
         onInput('origin', event);
@@ -58,7 +58,7 @@
   <Label class="grid gap-1 text-xs">
     Trace
     <Input
-      value={state.filters.traceId}
+      value={state.draftFilters.traceId}
       placeholder="trace_..."
       oninput={(event) => {
         onInput('traceId', event);
@@ -69,7 +69,7 @@
   <Label class="grid gap-1 text-xs">
     Chat
     <Input
-      value={state.filters.chatId}
+      value={state.draftFilters.chatId}
       placeholder="8512871156"
       oninput={(event) => {
         onInput('chatId', event);
@@ -80,7 +80,7 @@
   <Label class="grid gap-1 text-xs">
     Search
     <Input
-      value={state.filters.q}
+      value={state.draftFilters.q}
       placeholder="text in payload"
       oninput={(event) => {
         onInput('q', event);
@@ -93,7 +93,7 @@
     From
     <Input
       type="datetime-local"
-      value={state.filters.from}
+      value={state.draftFilters.from}
       oninput={(event) => {
         onInput('from', event);
       }}
@@ -104,15 +104,26 @@
     To
     <Input
       type="datetime-local"
-      value={state.filters.to}
+      value={state.draftFilters.to}
       oninput={(event) => {
         onInput('to', event);
       }}
     />
   </Label>
 
-  <div class="col-span-full flex flex-wrap justify-end gap-2 pt-1">
-    <Button type="submit" size="sm" disabled={state.loading} data-testid="filter-apply">Apply</Button>
+  <div class="col-span-full flex flex-wrap items-center justify-end gap-2 pt-1">
+    {#if state.hasUnappliedFilterChanges}
+      <span class="mr-auto text-xs text-muted-foreground" data-testid="filter-unapplied">Unapplied changes</span>
+    {/if}
+
+    <Button
+      type="submit"
+      size="sm"
+      disabled={state.loading || !state.hasUnappliedFilterChanges}
+      data-testid="filter-apply"
+    >
+      Apply
+    </Button>
     <Button
       type="button"
       variant="outline"
