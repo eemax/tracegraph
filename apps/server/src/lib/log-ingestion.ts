@@ -62,6 +62,8 @@ export class LogIngestionService {
 
   private timer: Timer | null = null;
 
+  private pollInFlight = false;
+
   private seq = 1;
 
   constructor(config: TracegraphConfig, store: EventStore, hub: SseHub, pollMs = 1000) {
@@ -121,8 +123,15 @@ export class LogIngestionService {
   }
 
   async pollOnce(): Promise<void> {
-    for (const runtime of this.runtimes) {
-      await this.tickRuntime(runtime);
+    if (this.pollInFlight) {
+      return;
+    }
+
+    this.pollInFlight = true;
+    try {
+      await Promise.allSettled(this.runtimes.map((runtime) => this.tickRuntime(runtime)));
+    } finally {
+      this.pollInFlight = false;
     }
   }
 
@@ -146,21 +155,30 @@ export class LogIngestionService {
       const previousOffset = runtime.offset;
       const nextOffset = stats.size;
 
+      let consumed = false;
+
       if (nextOffset > previousOffset) {
         const chunk = await readRangeUtf8(runtime.source.resolvedPath, previousOffset, nextOffset);
         this.processChunk(runtime, chunk, previousOffset);
         runtime.offset = nextOffset;
         runtime.idleRemainderPolls = 0;
+        consumed = true;
       } else if (runtime.remainder.length > 0) {
         runtime.idleRemainderPolls += 1;
         if (runtime.idleRemainderPolls >= 2) {
           this.flushTrailingRemainder(runtime, nextOffset);
+          consumed = true;
         }
       }
 
+      const healthChanged = !runtime.status.healthy || runtime.status.error !== undefined;
       runtime.status.healthy = true;
       runtime.status.error = undefined;
-      runtime.status.lastReadAt = new Date().toISOString();
+
+      if (consumed || healthChanged) {
+        runtime.status.lastReadAt = new Date().toISOString();
+      }
+
       this.emitStatus(runtime);
     } catch (error) {
       runtime.status.healthy = false;
@@ -247,7 +265,8 @@ export class LogIngestionService {
   }
 
   private emitStatus(runtime: SourceRuntime, force = false): void {
-    const signature = JSON.stringify(runtime.status);
+    const { lastReadAt: _, ...stable } = runtime.status;
+    const signature = JSON.stringify(stable);
     if (!force && signature === runtime.lastStatusSignature) {
       return;
     }

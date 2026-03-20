@@ -49,13 +49,18 @@ export class ExplorerDataState {
   private eventSource: EventSource | null = null;
   private readonly eventIndex: IncrementalEventIndex;
   private readonly eventsRequestVersion = new RequestVersion();
+  private appendQueue: NormalizedEvent[] = [];
+  private appendFlushScheduled = false;
 
   constructor(eventCap = defaultClientEventCap) {
     this.eventIndex = new IncrementalEventIndex(eventCap);
   }
 
+  getEventById(id: string): NormalizedEvent | undefined {
+    return this.eventIndex.getById(id);
+  }
+
   async start(): Promise<void> {
-    await this.fetchEvents(null, false);
     this.startStream();
   }
 
@@ -168,15 +173,20 @@ export class ExplorerDataState {
 
   ingestEnvelope(envelope: SseEnvelope): void {
     if (envelope.type === 'snapshot') {
-      this.eventIndex.merge(envelope.payload.items);
+      this.eventIndex.replace(envelope.payload.items);
       this.events = this.eventIndex.toArray();
-      this.total = Math.max(this.total, envelope.payload.total);
-      this.dropped = Math.max(this.dropped, envelope.payload.dropped);
+      this.total = envelope.payload.total;
+      this.dropped = envelope.payload.dropped;
       this.sources = toSourceRecord(envelope.payload.sources);
       return;
     }
 
     if (envelope.type === 'source_status') {
+      const existing = this.sources[envelope.payload.sourceId];
+      if (existing && JSON.stringify(existing) === JSON.stringify(envelope.payload)) {
+        return;
+      }
+
       this.sources = {
         ...this.sources,
         [envelope.payload.sourceId]: envelope.payload
@@ -184,9 +194,36 @@ export class ExplorerDataState {
       return;
     }
 
-    this.eventIndex.upsert(envelope.payload);
-    this.events = this.eventIndex.toArray();
+    this.appendQueue.push(envelope.payload);
     this.total += 1;
+    this.scheduleAppendFlush();
+  }
+
+  private scheduleAppendFlush(): void {
+    if (this.appendFlushScheduled) {
+      return;
+    }
+
+    this.appendFlushScheduled = true;
+
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => this.flushAppendQueue());
+    } else {
+      setTimeout(() => this.flushAppendQueue(), 16);
+    }
+  }
+
+  private flushAppendQueue(): void {
+    this.appendFlushScheduled = false;
+
+    if (this.appendQueue.length === 0) {
+      return;
+    }
+
+    const batch = this.appendQueue;
+    this.appendQueue = [];
+    this.eventIndex.merge(batch);
+    this.events = this.eventIndex.toArray();
   }
 
   private startStream(): void {

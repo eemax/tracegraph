@@ -281,22 +281,36 @@ export function buildTraceTimeline(events: NormalizedEvent[]): TimelineItem[] {
     }
   }
 
-  const getDepth = (event: NormalizedEvent): number => {
-    let depth = 0;
-    let currentParent = event.trace?.parentSpanId ?? null;
-    const seen = new Set<string>();
+  const depthCache = new Map<string, number>();
+  const computing = new Set<string>();
 
-    while (currentParent) {
-      if (seen.has(currentParent)) {
-        break;
+  const getDepth = (event: NormalizedEvent): number => {
+    const spanId = event.trace?.spanId;
+    if (spanId && depthCache.has(spanId)) {
+      return depthCache.get(spanId)!;
+    }
+
+    if (spanId && computing.has(spanId)) {
+      return 0;
+    }
+
+    if (spanId) {
+      computing.add(spanId);
+    }
+
+    let depth = 0;
+    const parentSpanId = event.trace?.parentSpanId ?? null;
+
+    if (parentSpanId) {
+      const parent = bySpan.get(parentSpanId);
+      if (parent) {
+        depth = getDepth(parent) + 1;
       }
-      seen.add(currentParent);
-      const parent = bySpan.get(currentParent);
-      if (!parent) {
-        break;
-      }
-      depth += 1;
-      currentParent = parent.trace?.parentSpanId ?? null;
+    }
+
+    if (spanId) {
+      depthCache.set(spanId, depth);
+      computing.delete(spanId);
     }
 
     return depth;

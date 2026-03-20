@@ -55,6 +55,10 @@ export class IncrementalEventIndex {
     this.byId.set(item.id, item);
   }
 
+  getById(id: string): NormalizedEvent | undefined {
+    return this.byId.get(id);
+  }
+
   toArray(): NormalizedEvent[] {
     return this.orderedIds.map((id) => this.byId.get(id)).filter((event): event is NormalizedEvent => Boolean(event));
   }

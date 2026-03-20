@@ -87,26 +87,20 @@ export class EventStore {
     const limit = clampLimit(rawQuery.limit);
     const cursor = parseCursor(rawQuery.cursor);
 
+    const startOrdinal = cursor !== undefined ? this.findFirstOrdinalAfter(cursor) : 0;
+    const remaining = this.count - startOrdinal;
+
     const items: NormalizedEvent[] = [];
-    let matchedCount = 0;
+    const end = Math.min(startOrdinal + limit, this.count);
 
-    for (let i = 0; i < this.count; i += 1) {
+    for (let i = startOrdinal; i < end; i += 1) {
       const event = this.readByOrdinal(i);
-      if (!event) {
-        continue;
-      }
-
-      if (cursor !== undefined && event.seq <= cursor) {
-        continue;
-      }
-
-      matchedCount += 1;
-      if (items.length < limit) {
+      if (event) {
         items.push(event);
       }
     }
 
-    const hasMore = matchedCount > items.length;
+    const hasMore = remaining > items.length;
 
     return {
       items,
@@ -155,6 +149,24 @@ export class EventStore {
       total: totalMatches,
       dropped: this.dropped
     };
+  }
+
+  private findFirstOrdinalAfter(cursor: number): number {
+    let low = 0;
+    let high = this.count;
+
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      const event = this.readByOrdinal(mid);
+
+      if (!event || event.seq <= cursor) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+
+    return low;
   }
 
   private readByOrdinal(ordinal: number): NormalizedEvent | null {

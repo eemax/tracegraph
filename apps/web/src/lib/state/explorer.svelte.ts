@@ -15,7 +15,9 @@ export class ExplorerState {
 
   groups = $derived(buildGroups(this.data.events, this.view.groupingMode));
 
-  selectedEvent = $derived(this.data.events.find((event) => event.id === this.view.selectedId) ?? null);
+  selectedEvent = $derived(
+    this.view.selectedId ? (this.data.getEventById(this.view.selectedId) ?? null) : null
+  );
 
   parsedFields = $derived(this.selectedEvent ? buildParsedFields(this.selectedEvent) : []);
   rawInspectorJson = $derived(this.selectedEvent ? toPrettyInspectorJson(this.selectedEvent.raw) : '');

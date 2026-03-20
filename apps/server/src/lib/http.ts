@@ -105,7 +105,7 @@ export async function createServer(options: ServerOptions = {}): Promise<ServerC
         sendSse(controller, {
           type: 'snapshot',
           payload: {
-            items: store.query({ limit: 200 }).items,
+            items: store.getLatest(200),
             total: store.size,
             dropped: store.droppedCount,
             sources: ingestion.getStatuses()
