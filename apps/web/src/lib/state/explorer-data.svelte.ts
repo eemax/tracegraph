@@ -28,6 +28,9 @@ export class ExplorerDataState {
   loadingMore = $state(false);
   sources = $state<Record<string, SourceStatus>>({});
 
+  traceGroupEvents = $state<NormalizedEvent[]>([]);
+  traceGroupId = $state<string | null>(null);
+
   traceTimeline = $state<TimelineItem[]>([]);
   currentTraceRequest = $state<string | null>(null);
 
@@ -121,6 +124,41 @@ export class ExplorerDataState {
 
       this.loading = false;
       this.loadingMore = false;
+    }
+  }
+
+  async fetchTraceGroupEvents(traceId: string | null): Promise<void> {
+    if (!traceId) {
+      this.traceGroupEvents = [];
+      this.traceGroupId = null;
+      return;
+    }
+
+    this.traceGroupId = traceId;
+
+    try {
+      const allItems: NormalizedEvent[] = [];
+      let cursor: string | null = null;
+
+      do {
+        const payload = await fetchTraceEvents(traceId, cursor, 1000);
+
+        if (this.traceGroupId !== traceId) return;
+
+        allItems.push(...payload.items);
+        cursor = payload.nextCursor;
+      } while (cursor);
+
+      if (this.traceGroupId !== traceId) return;
+
+      this.traceGroupEvents = allItems;
+    } catch (error) {
+      if (this.traceGroupId === traceId) {
+        this.traceGroupEvents = [];
+      }
+
+      const message = getErrorMessage(error);
+      toast.error('Failed to load trace events', { description: message });
     }
   }
 

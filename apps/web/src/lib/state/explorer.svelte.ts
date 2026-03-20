@@ -1,9 +1,9 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
-import { buildVirtualWindow, buildGroups, overscan, rowHeight, allGroupsKey, type GroupMode } from './explorer-selectors';
+import { buildVirtualWindow, buildGroups, isEventInGroup, overscan, rowHeight, allGroupsKey, type GroupMode } from './explorer-selectors';
 import { ExplorerDataState, type ConnectionState } from './explorer-data.svelte';
 import { ExplorerViewState, type InspectorTab } from './explorer-view.svelte';
 import { buildParsedFields, type ParsedField } from './explorer-helpers';
-import { highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem } from '$lib/ui';
+import { formatIsoTimestampsInJson, highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem } from '$lib/ui';
 
 export type { ParsedField };
 export type { GroupMode, InspectorTab, ConnectionState };
@@ -15,22 +15,49 @@ export class ExplorerState {
 
   groups = $derived(buildGroups(this.data.events, this.view.groupingMode));
 
-  selectedEvent = $derived(
-    this.view.selectedId ? (this.data.getEventById(this.view.selectedId) ?? null) : null
-  );
+  filteredEvents = $derived.by(() => {
+    const group = this.view.selectedGroup;
+    if (group === allGroupsKey) return this.data.events;
+    if (this.data.traceGroupId === group && this.data.traceGroupEvents.length > 0) {
+      return this.data.traceGroupEvents;
+    }
+    return this.data.events.filter((e) => isEventInGroup(e, this.view.groupingMode, group));
+  });
+
+  selectedEvent = $derived.by(() => {
+    const id = this.view.selectedId;
+    if (!id) return null;
+    const fromIndex = this.data.getEventById(id);
+    if (fromIndex) return fromIndex;
+    return this.data.traceGroupEvents.find((e) => e.id === id) ?? null;
+  });
+
+  selectedGroupSummary = $derived.by(() => {
+    if (this.view.selectedGroup === allGroupsKey) return null;
+    const events = this.filteredEvents;
+    if (events.length === 0) return null;
+    const first = events[events.length - 1];
+    const last = events[0];
+    const durationMs = new Date(last.timestamp).getTime() - new Date(first.timestamp).getTime();
+    return {
+      traceId: this.view.selectedGroup,
+      eventCount: events.length,
+      durationMs: Math.max(0, durationMs)
+    };
+  });
 
   parsedFields = $derived(this.selectedEvent ? buildParsedFields(this.selectedEvent) : []);
   rawInspectorJson = $derived(this.selectedEvent ? toPrettyInspectorJson(this.selectedEvent.raw) : '');
-  highlightedRawInspectorJson = $derived(highlightJsonSyntax(this.rawInspectorJson));
+  highlightedRawInspectorJson = $derived(highlightJsonSyntax(formatIsoTimestampsInJson(this.rawInspectorJson)));
 
-  totalRows = $derived(this.data.events.length);
+  totalRows = $derived(this.filteredEvents.length);
   virtualWindow = $derived(
     buildVirtualWindow(this.totalRows, this.view.scrollTop, this.view.viewportHeight, rowHeight, overscan)
   );
 
   startIndex = $derived(this.virtualWindow.startIndex);
   endIndex = $derived(this.virtualWindow.endIndex);
-  visibleRows = $derived(this.data.events.slice(this.startIndex, this.endIndex));
+  visibleRows = $derived(this.filteredEvents.slice(this.startIndex, this.endIndex));
   topPadding = $derived(this.virtualWindow.topPadding);
   bottomPadding = $derived(this.virtualWindow.bottomPadding);
 
@@ -40,7 +67,12 @@ export class ExplorerState {
     });
 
     $effect(() => {
-      this.view.ensureSelectedEventExists(this.data.events);
+      this.view.ensureSelectedEventExists(this.filteredEvents);
+    });
+
+    $effect(() => {
+      const group = this.view.selectedGroup;
+      void this.data.fetchTraceGroupEvents(group === allGroupsKey ? null : group);
     });
 
     $effect(() => {
@@ -203,6 +235,6 @@ export class ExplorerState {
   };
 
   onKeyDown = (event: KeyboardEvent): void => {
-    this.view.onKeyDown(event, this.data.events);
+    this.view.onKeyDown(event, this.filteredEvents);
   };
 }

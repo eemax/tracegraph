@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert/index.js';
+  import { Badge } from '$lib/components/ui/badge/index.js';
   import { Spinner } from '$lib/components/ui/spinner/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
   import { formatTimestamp } from '$lib/ui';
@@ -18,6 +19,14 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
+  {#if state.selectedGroupSummary}
+    <div class="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-xs">
+      <Badge variant="secondary">trace...{state.selectedGroupSummary.traceId.slice(-8)}</Badge>
+      <span class="text-muted-foreground">{state.selectedGroupSummary.eventCount} events</span>
+      <span class="text-muted-foreground">{state.selectedGroupSummary.durationMs}ms</span>
+    </div>
+  {/if}
+
   {#if !state.loading && state.events.length === 0}
     <div class="p-3">
       <Alert>

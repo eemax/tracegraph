@@ -267,7 +267,42 @@ export function formatTimestamp(iso: string): string {
   if (Number.isNaN(date.getTime())) {
     return iso;
   }
-  return date.toISOString();
+
+  // Local timestamp (not UTC) + relative age.
+  // Example: "2026-03-20 11:52:04 • 2h 13m ago"
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  const HH = String(date.getHours()).padStart(2, '0');
+  const mmn = String(date.getMinutes()).padStart(2, '0');
+  const ss = String(date.getSeconds()).padStart(2, '0');
+  const local = `${yyyy}-${mm}-${dd} ${HH}:${mmn}:${ss}`;
+
+  const diffMs = Date.now() - date.getTime();
+  const totalMinutes = Math.floor(Math.abs(diffMs) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  const suffix = diffMs >= 0 ? 'ago' : 'in';
+  const age = `${hours}h ${minutes}m ${suffix}`;
+
+  return `${local} • ${age}`;
+}
+
+/**
+ * Rewrites ISO-8601 UTC timestamp strings inside a JSON string.
+ * Intended for the "Raw JSON" inspector so timestamps are consistently readable.
+ */
+export function formatIsoTimestampsInJson(prettyJson: string): string {
+  // Matches JSON string values like:
+  //   "2026-03-20T04:46:52.049Z"
+  //   "2026-03-20T04:46:52Z"
+  const isoUtcStringValue =
+    /"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z)"/g;
+
+  return prettyJson.replace(isoUtcStringValue, (_match, iso: string) => {
+    return `"${formatTimestamp(iso)}"`;
+  });
 }
 
 export function buildTraceTimeline(events: NormalizedEvent[]): TimelineItem[] {

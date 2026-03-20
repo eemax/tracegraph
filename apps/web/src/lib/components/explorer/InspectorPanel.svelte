@@ -33,15 +33,18 @@
 >
   <header class="flex items-center justify-between gap-2 border-b px-4 py-2">
     <h2 class="text-xs font-semibold uppercase tracking-wide">Event Inspector</h2>
-    <span class="max-w-[18rem] truncate text-xs text-muted-foreground">
-      {state.selectedEvent ? state.selectedEvent.id : 'No event selected'}
-    </span>
+    {#if !state.selectedEvent}
+      <span class="text-xs text-muted-foreground">No event selected</span>
+    {/if}
   </header>
 
   {#if state.selectedEvent}
+    {@const eventType = getEventType(state.selectedEvent)}
     <div class="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-xs">
-      <Badge variant="secondary">{getEventType(state.selectedEvent)}</Badge>
-      <span class="truncate">{state.selectedEvent.event}</span>
+      <Badge variant="secondary">{eventType}</Badge>
+      {#if state.selectedEvent.event !== eventType}
+        <span class="truncate">{state.selectedEvent.event}</span>
+      {/if}
       <span class="text-muted-foreground">{formatTimestamp(state.selectedEvent.timestamp)}</span>
     </div>
   {/if}

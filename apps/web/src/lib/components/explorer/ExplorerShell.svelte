@@ -50,7 +50,7 @@
     <Resizable.ResizablePaneGroup direction="horizontal" class="h-full gap-2">
       <Resizable.ResizablePane defaultSize={40} minSize={35}>
         <section class="flex h-full min-h-0 flex-col rounded-xl border bg-card text-card-foreground shadow-xs" aria-label="Event feed">
-          <header class="flex items-center justify-between gap-2 px-4 py-2">
+          <header class="flex items-center justify-between gap-2 border-b px-4 py-2">
             <h2 class="text-xs font-semibold uppercase tracking-wide">Event Feed</h2>
           </header>
 
@@ -82,7 +82,7 @@
 
   <div class="min-h-0 flex-1 lg:hidden">
     <section class="flex h-full min-h-0 flex-col rounded-xl border bg-card text-card-foreground shadow-xs" aria-label="Event feed">
-      <header class="flex items-center justify-between gap-2 px-4 py-2">
+      <header class="flex items-center justify-between gap-2 border-b px-4 py-2">
         <h2 class="text-xs font-semibold uppercase tracking-wide">Event Feed</h2>
         <div class="flex items-center gap-2">
           <Button
