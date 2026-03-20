@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NormalizedEvent } from '@tracegraph/shared';
-import { buildParsedFields, createDefaultFilters } from './explorer-helpers';
+import { buildParsedFields } from './explorer-helpers';
 
 function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): NormalizedEvent {
   return {
@@ -47,12 +47,5 @@ describe('explorer state helpers', () => {
     expect(parsed.some((field) => field.label === 'Event Type' && field.value === 'workflow.progress')).toBe(true);
     expect(parsed.some((field) => field.label === 'Success' && field.value === 'true')).toBe(true);
     expect(parsed.some((field) => field.label === 'HTTP Status' && field.value === '200')).toBe(true);
-  });
-
-  it('creates empty filters by default', () => {
-    expect(createDefaultFilters()).toEqual({
-      eventTypes: [],
-      q: ''
-    });
   });
 });

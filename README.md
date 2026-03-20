@@ -43,3 +43,8 @@ See [docs/config.md](docs/config.md) for full reference.
 - [docs/config.md](docs/config.md) — configuration reference
 - [docs/testing.md](docs/testing.md) — test structure and matrix
 - [docs/user-guide.md](docs/user-guide.md) — UI usage guide
+
+## API Notes
+
+- `GET /api/events` supports pagination params only: `limit`, `cursor` (ascending chronological order).
+- `GET /api/traces/:traceId/events` provides trace timeline pagination for inspector views.

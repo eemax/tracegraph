@@ -34,13 +34,8 @@ sources:
 
 ## Use the UI
 
-- Filter by `event type`.
-- Use `Payload text` for full-text query on raw event payload JSON.
-- Filter inputs are draft-only until `Apply`.
-- `Apply` promotes draft filters to active filters and reloads the feed.
-- `Reset` clears both draft and active filters and reloads.
-- `Unapplied changes` appears when draft input differs from active filters.
-- Group sidebar shows traces only.
+- Feed rows are shown in ascending chronological order (`oldest -> newest`).
+- Group sidebar shows trace groups and counts, but does not hide events from the main feed.
 - Arrow keys move selection in the explorer list and keep the selected row visible.
 - `Enter` opens or focuses inspector context for the selected row.
 - Inline explorer error banner includes `Retry list` and `Reconnect stream`.
@@ -53,10 +48,11 @@ sources:
   - `Parsed`: important structured fields.
   - `Raw JSON`: full event payload.
   - `Trace Timeline`: ordered events for the active trace.
-- Connection state badge in the top bar shows `Connecting`, `Live`, `Reconnecting`, or `Disconnected`.
+- Top status row shows global counters (`Total`, `Dropped`, `Loaded`), connection badge, and per-source health badges (`healthy`/`degraded`, lines, malformed).
 
 ## Useful Endpoints
 
 - `http://127.0.0.1:48292/api/health`
 - `http://127.0.0.1:48292/api/sources`
 - `http://127.0.0.1:48292/api/events?limit=50`
+- `http://127.0.0.1:48292/api/traces/<traceId>/events?limit=100`

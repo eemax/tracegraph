@@ -15,28 +15,17 @@ test('loads event feed and inspector', async ({ page }) => {
   await expect(page.locator('[data-testid="tab-content-raw"]:visible').first()).toBeVisible();
 });
 
-test('editing unapplied filters does not change visible list until apply', async ({ page }) => {
+test('feed renders without filter controls and source status strip', async ({ page }) => {
   await page.goto('/');
 
   const rows = page.locator('[data-testid="event-row"]:visible');
   await expect(rows.first()).toBeVisible({ timeout: 15_000 });
-  const beforeCount = await rows.count();
 
-  const filterSearch = page.locator('[data-testid="filter-search"]:visible').first();
-  await filterSearch.fill('definitely.no.match.event');
-
-  await expect(page.locator('[data-testid="filter-unapplied"]:visible').first()).toBeVisible();
-  await expect(page.locator('[data-testid="filter-apply"]:visible').first()).toBeEnabled();
-
-  const midCount = await page.locator('[data-testid="event-row"]:visible').count();
-  expect(midCount).toBe(beforeCount);
-
-  await page.locator('[data-testid="filter-apply"]:visible').first().click();
-  await expect(page.getByText('No events yet').first()).toBeVisible();
-
-  await page.locator('[data-testid="filter-reset"]:visible').first().click();
-  await expect(filterSearch).toHaveValue('');
-  await expect(page.locator('[data-testid="event-row"]:visible').first()).toBeVisible();
+  await expect(page.locator('[data-testid="filter-form"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="filter-search"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="filter-apply"]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="filter-reset"]')).toHaveCount(0);
+  await expect(page.getByLabel('Source status')).toHaveCount(0);
 });
 
 test('keyboard navigation keeps selected row in viewport', async ({ page }) => {

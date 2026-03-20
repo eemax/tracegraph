@@ -1,5 +1,5 @@
 import type { EventListResponse, SseEnvelope } from '@tracegraph/shared';
-import { buildQueryString, type UiFilters } from '$lib/ui';
+import { buildPaginationQueryString } from '$lib/ui';
 
 function toErrorMessage(response: Response, detail?: string): string {
   const base = `Request failed with status ${response.status}`;
@@ -25,15 +25,15 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function fetchEvents(filters: UiFilters, cursor?: string | null, limit = 300): Promise<EventListResponse> {
-  const query = buildQueryString(filters, cursor, limit);
+export async function fetchEvents(cursor?: string | null, limit = 300): Promise<EventListResponse> {
+  const query = buildPaginationQueryString(cursor, limit);
   const response = await fetch(`/api/events?${query}`);
   return parseJsonResponse<EventListResponse>(response);
 }
 
-export async function fetchTraceEvents(filters: UiFilters, traceId: string, limit = 500): Promise<EventListResponse> {
-  const query = buildQueryString(filters, null, limit, { traceId });
-  const response = await fetch(`/api/events?${query}`);
+export async function fetchTraceEvents(traceId: string, cursor?: string | null, limit = 500): Promise<EventListResponse> {
+  const query = buildPaginationQueryString(cursor, limit);
+  const response = await fetch(`/api/traces/${encodeURIComponent(traceId)}/events?${query}`);
   return parseJsonResponse<EventListResponse>(response);
 }
 

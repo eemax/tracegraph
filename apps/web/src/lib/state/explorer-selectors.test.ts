@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { NormalizedEvent } from '@tracegraph/shared';
 import {
-  allGroupsKey,
   buildGroups,
   buildVirtualWindow,
-  filtersEqual,
-  filtersHaveValues,
-  selectFilteredEvents
+  isEventInGroup
 } from './explorer-selectors';
 
 function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): NormalizedEvent {
@@ -38,7 +35,7 @@ function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): Norma
 }
 
 describe('explorer selectors', () => {
-  it('builds grouped views and filters by selected group', () => {
+  it('builds grouped views and evaluates group membership', () => {
     const events = [
       makeEvent(3, { event: 'provider.openai.request.completed' }),
       makeEvent(2, { event: 'tool.workflow.progress' }),
@@ -48,10 +45,8 @@ describe('explorer selectors', () => {
     const groups = buildGroups(events, 'traces');
     expect(groups.map((group) => group.key)).toEqual(['trace-odd', 'trace-even']);
 
-    const filtered = selectFilteredEvents(events, 'traces', 'trace-odd');
-    expect(filtered.map((event) => event.id)).toEqual(['event-3', 'event-1']);
-
-    expect(selectFilteredEvents(events, 'traces', allGroupsKey)).toEqual(events);
+    expect(isEventInGroup(events[0], 'traces', 'trace-odd')).toBe(true);
+    expect(isEventInGroup(events[1], 'traces', 'trace-odd')).toBe(false);
   });
 
   it('computes virtualization windows for visible slices', () => {
@@ -61,17 +56,5 @@ describe('explorer selectors', () => {
     expect(window.endIndex).toBe(17);
     expect(window.topPadding).toBe(400);
     expect(window.bottomPadding).toBe(4150);
-  });
-
-  it('detects active filters and unapplied equality checks', () => {
-    const base = {
-      eventTypes: [],
-      q: ''
-    };
-
-    expect(filtersHaveValues(base)).toBe(false);
-    expect(filtersEqual(base, { ...base })).toBe(true);
-    expect(filtersHaveValues({ ...base, q: 'needle' })).toBe(true);
-    expect(filtersEqual(base, { ...base, q: 'needle' })).toBe(false);
   });
 });

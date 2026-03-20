@@ -1,15 +1,9 @@
 import { toast } from 'svelte-sonner';
 import type { NormalizedEvent, SourceStatus, SseEnvelope } from '@tracegraph/shared';
 import { connectEventStream, fetchEvents, fetchTraceEvents } from '$lib/api';
-import { buildTraceTimeline, eventMatchesFilters, type TimelineItem, type UiFilters } from '$lib/ui';
-import {
-  applyDraftFilters as applyDraftFiltersModel,
-  createFilterModels,
-  resetFilterModels as resetFilterModelsState,
-  setDraftFilter as setDraftFilterModel
-} from './explorer-filters';
+import { buildTraceTimeline, type TimelineItem } from '$lib/ui';
 import { defaultClientEventCap, IncrementalEventIndex } from './explorer-index';
-import { filtersEqual, filtersHaveValues } from './explorer-selectors';
+import { RequestVersion } from './request-version';
 
 export type ConnectionState = 'connecting' | 'live' | 'reconnecting' | 'disconnected';
 
@@ -26,9 +20,6 @@ function toSourceRecord(sources: SourceStatus[]): Record<string, SourceStatus> {
 }
 
 export class ExplorerDataState {
-  draftFilters = $state<UiFilters>(createFilterModels().draftFilters);
-  activeFilters = $state<UiFilters>(createFilterModels().activeFilters);
-
   events = $state<NormalizedEvent[]>([]);
   nextCursor = $state<string | null>(null);
   total = $state(0);
@@ -45,9 +36,6 @@ export class ExplorerDataState {
 
   sourceList = $derived(Object.values(this.sources));
 
-  hasActiveFilters = $derived(filtersHaveValues(this.activeFilters));
-  hasUnappliedFilters = $derived(!filtersEqual(this.draftFilters, this.activeFilters));
-
   liveLabel = $derived(
     this.connectionState === 'live'
       ? 'Live'
@@ -60,32 +48,10 @@ export class ExplorerDataState {
 
   private eventSource: EventSource | null = null;
   private readonly eventIndex: IncrementalEventIndex;
+  private readonly eventsRequestVersion = new RequestVersion();
 
   constructor(eventCap = defaultClientEventCap) {
     this.eventIndex = new IncrementalEventIndex(eventCap);
-  }
-
-  setDraftFilter(key: keyof UiFilters, value: string | string[]): void {
-    const nextModels = setDraftFilterModel(
-      { draftFilters: this.draftFilters, activeFilters: this.activeFilters },
-      key,
-      value
-    );
-    this.draftFilters = nextModels.draftFilters;
-  }
-
-  applyDraftFilters(): void {
-    const nextModels = applyDraftFiltersModel({
-      draftFilters: this.draftFilters,
-      activeFilters: this.activeFilters
-    });
-    this.activeFilters = nextModels.activeFilters;
-  }
-
-  resetFilterModels(): void {
-    const nextModels = resetFilterModelsState();
-    this.draftFilters = nextModels.draftFilters;
-    this.activeFilters = nextModels.activeFilters;
   }
 
   async start(): Promise<void> {
@@ -108,6 +74,8 @@ export class ExplorerDataState {
   }
 
   async fetchEvents(cursor?: string | null, append = false): Promise<void> {
+    const requestId = this.eventsRequestVersion.next();
+
     if (append) {
       this.loadingMore = true;
     } else {
@@ -115,7 +83,10 @@ export class ExplorerDataState {
     }
 
     try {
-      const payload = await fetchEvents(this.activeFilters, cursor);
+      const payload = await fetchEvents(cursor);
+      if (!this.eventsRequestVersion.isCurrent(requestId)) {
+        return;
+      }
 
       if (append) {
         this.eventIndex.merge(payload.items);
@@ -129,12 +100,20 @@ export class ExplorerDataState {
       this.dropped = payload.dropped;
       this.errorMessage = null;
     } catch (error) {
+      if (!this.eventsRequestVersion.isCurrent(requestId)) {
+        return;
+      }
+
       const message = getErrorMessage(error);
       this.errorMessage = message;
       toast.error('Failed to load events', {
         description: message
       });
     } finally {
+      if (!this.eventsRequestVersion.isCurrent(requestId)) {
+        return;
+      }
+
       this.loading = false;
       this.loadingMore = false;
     }
@@ -154,13 +133,25 @@ export class ExplorerDataState {
     this.currentTraceRequest = traceId;
 
     try {
-      const payload = await fetchTraceEvents(this.activeFilters, traceId);
+      const allTraceItems: NormalizedEvent[] = [];
+      let cursor: string | null = null;
+
+      do {
+        const payload = await fetchTraceEvents(traceId, cursor, 1000);
+
+        if (this.currentTraceRequest !== traceId) {
+          return;
+        }
+
+        allTraceItems.push(...payload.items);
+        cursor = payload.nextCursor;
+      } while (cursor);
 
       if (this.currentTraceRequest !== traceId) {
         return;
       }
 
-      this.traceTimeline = buildTraceTimeline(payload.items);
+      this.traceTimeline = buildTraceTimeline(allTraceItems);
       this.errorMessage = null;
     } catch (error) {
       if (this.currentTraceRequest === traceId) {
@@ -177,8 +168,7 @@ export class ExplorerDataState {
 
   ingestEnvelope(envelope: SseEnvelope): void {
     if (envelope.type === 'snapshot') {
-      const visibleItems = envelope.payload.items.filter((event) => eventMatchesFilters(event, this.activeFilters));
-      this.eventIndex.merge(visibleItems);
+      this.eventIndex.merge(envelope.payload.items);
       this.events = this.eventIndex.toArray();
       this.total = Math.max(this.total, envelope.payload.total);
       this.dropped = Math.max(this.dropped, envelope.payload.dropped);
@@ -191,10 +181,6 @@ export class ExplorerDataState {
         ...this.sources,
         [envelope.payload.sourceId]: envelope.payload
       };
-      return;
-    }
-
-    if (!eventMatchesFilters(envelope.payload, this.activeFilters)) {
       return;
     }
 

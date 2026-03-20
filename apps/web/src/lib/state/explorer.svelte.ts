@@ -1,17 +1,9 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
-import {
-  buildVirtualWindow,
-  buildGroups,
-  overscan,
-  rowHeight,
-  selectFilteredEvents,
-  allGroupsKey,
-  type GroupMode
-} from './explorer-selectors';
+import { buildVirtualWindow, buildGroups, overscan, rowHeight, allGroupsKey, type GroupMode } from './explorer-selectors';
 import { ExplorerDataState, type ConnectionState } from './explorer-data.svelte';
 import { ExplorerViewState, type InspectorTab } from './explorer-view.svelte';
 import { buildParsedFields, type ParsedField } from './explorer-helpers';
-import { getEventType, highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem, type UiFilters } from '$lib/ui';
+import { highlightJsonSyntax, toPrettyInspectorJson, type TimelineItem } from '$lib/ui';
 
 export type { ParsedField };
 export type { GroupMode, InspectorTab, ConnectionState };
@@ -23,32 +15,22 @@ export class ExplorerState {
 
   groups = $derived(buildGroups(this.data.events, this.view.groupingMode));
 
-  filteredEvents = $derived(
-    selectFilteredEvents(this.data.events, this.view.groupingMode, this.view.selectedGroup)
-  );
-
   selectedEvent = $derived(this.data.events.find((event) => event.id === this.view.selectedId) ?? null);
 
   parsedFields = $derived(this.selectedEvent ? buildParsedFields(this.selectedEvent) : []);
   rawInspectorJson = $derived(this.selectedEvent ? toPrettyInspectorJson(this.selectedEvent.raw) : '');
   highlightedRawInspectorJson = $derived(highlightJsonSyntax(this.rawInspectorJson));
 
-  totalRows = $derived(this.filteredEvents.length);
+  totalRows = $derived(this.data.events.length);
   virtualWindow = $derived(
     buildVirtualWindow(this.totalRows, this.view.scrollTop, this.view.viewportHeight, rowHeight, overscan)
   );
 
   startIndex = $derived(this.virtualWindow.startIndex);
   endIndex = $derived(this.virtualWindow.endIndex);
-  visibleRows = $derived(this.filteredEvents.slice(this.startIndex, this.endIndex));
+  visibleRows = $derived(this.data.events.slice(this.startIndex, this.endIndex));
   topPadding = $derived(this.virtualWindow.topPadding);
   bottomPadding = $derived(this.virtualWindow.bottomPadding);
-
-  hasActiveFilters = $derived(this.data.hasActiveFilters);
-  hasUnappliedFilterChanges = $derived(this.data.hasUnappliedFilters);
-  availableEventTypes = $derived(
-    [...new Set(this.data.events.map((event) => getEventType(event)))].sort((a, b) => a.localeCompare(b))
-  );
 
   constructor() {
     $effect(() => {
@@ -56,25 +38,13 @@ export class ExplorerState {
     });
 
     $effect(() => {
-      this.view.ensureSelectedEventExists(this.filteredEvents);
+      this.view.ensureSelectedEventExists(this.data.events);
     });
 
     $effect(() => {
       const traceId = this.selectedEvent?.trace?.traceId ?? null;
       void this.data.syncTraceTimeline(traceId);
     });
-  }
-
-  get filters(): UiFilters {
-    return this.data.draftFilters;
-  }
-
-  get draftFilters(): UiFilters {
-    return this.data.draftFilters;
-  }
-
-  get activeFilters(): UiFilters {
-    return this.data.activeFilters;
   }
 
   get events(): NormalizedEvent[] {
@@ -186,26 +156,6 @@ export class ExplorerState {
     await this.data.retryList();
   }
 
-  setFilter(key: keyof UiFilters, value: string | string[]): void {
-    this.data.setDraftFilter(key, value);
-  }
-
-  async applyFilters(): Promise<void> {
-    if (!this.data.hasUnappliedFilters) {
-      return;
-    }
-
-    this.data.applyDraftFilters();
-    this.view.resetForFilterApply();
-    await this.data.fetchEvents(null, false);
-  }
-
-  async resetFilters(): Promise<void> {
-    this.data.resetFilterModels();
-    this.view.resetForFilterApply();
-    await this.data.fetchEvents(null, false);
-  }
-
   setGroupingMode(mode: GroupMode): void {
     this.view.setGroupingMode(mode);
   }
@@ -251,6 +201,6 @@ export class ExplorerState {
   };
 
   onKeyDown = (event: KeyboardEvent): void => {
-    this.view.onKeyDown(event, this.filteredEvents);
+    this.view.onKeyDown(event, this.data.events);
   };
 }

@@ -26,34 +26,15 @@ function sendSse(controller: ReadableStreamDefaultController<Uint8Array>, envelo
   controller.enqueue(new TextEncoder().encode(payload));
 }
 
-function parseQuery(query: Record<string, unknown>): EventFilterQuery {
-  const rawEventType = query.eventType;
-  const parsedEventType =
-    typeof rawEventType === 'string'
-      ? rawEventType
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean)
-      : Array.isArray(rawEventType)
-        ? rawEventType
-            .filter((value): value is string => typeof value === 'string')
-            .flatMap((value) => value.split(','))
-            .map((value) => value.trim())
-            .filter(Boolean)
-        : undefined;
-
+function parsePaginationQuery(query: Record<string, unknown>): EventFilterQuery {
   return {
     cursor: typeof query.cursor === 'string' ? query.cursor : undefined,
-    limit: typeof query.limit === 'string' ? Number.parseInt(query.limit, 10) : undefined,
-    from: typeof query.from === 'string' ? query.from : undefined,
-    to: typeof query.to === 'string' ? query.to : undefined,
-    eventType: parsedEventType,
-    event: typeof query.event === 'string' ? query.event : undefined,
-    stage: typeof query.stage === 'string' ? query.stage : undefined,
-    origin: typeof query.origin === 'string' ? query.origin : undefined,
-    traceId: typeof query.traceId === 'string' ? query.traceId : undefined,
-    chatId: typeof query.chatId === 'string' ? query.chatId : undefined,
-    q: typeof query.q === 'string' ? query.q : undefined
+    limit:
+      typeof query.limit === 'string'
+        ? Number.parseInt(query.limit, 10)
+        : typeof query.limit === 'number'
+          ? Math.floor(query.limit)
+          : undefined
   };
 }
 
@@ -92,7 +73,18 @@ export async function createServer(options: ServerOptions = {}): Promise<ServerC
   }));
 
   app.get('/api/events', ({ query }) => {
-    const response: EventListResponse = store.query(parseQuery(query as Record<string, unknown>));
+    const response: EventListResponse = store.query(parsePaginationQuery(query as Record<string, unknown>));
+    return response;
+  });
+
+  app.get('/api/traces/:traceId/events', ({ params, query, set }) => {
+    const traceId = params.traceId?.trim();
+    if (!traceId) {
+      set.status = 400;
+      return { error: 'traceId is required' };
+    }
+
+    const response: EventListResponse = store.queryTrace(traceId, parsePaginationQuery(query as Record<string, unknown>));
     return response;
   });
 
@@ -113,7 +105,7 @@ export async function createServer(options: ServerOptions = {}): Promise<ServerC
         sendSse(controller, {
           type: 'snapshot',
           payload: {
-            items: store.getLatest(200),
+            items: store.query({ limit: 200 }).items,
             total: store.size,
             dropped: store.droppedCount,
             sources: ingestion.getStatuses()

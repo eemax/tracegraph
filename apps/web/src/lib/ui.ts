@@ -1,10 +1,5 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
 
-export interface UiFilters {
-  eventTypes: string[];
-  q: string;
-}
-
 export interface TimelineItem {
   event: NormalizedEvent;
   depth: number;
@@ -19,11 +14,6 @@ export interface EventTypeGroup {
 }
 
 export const missingTraceGroupKey = '__missing_trace__';
-
-function getTimestampMs(event: NormalizedEvent): number {
-  const ms = Date.parse(event.timestamp);
-  return Number.isNaN(ms) ? 0 : ms;
-}
 
 export function getEventType(event: NormalizedEvent): string {
   const derivedType = event.derived?.eventType?.trim();
@@ -261,12 +251,7 @@ export function highlightJsonSyntax(prettyJson: string): string {
   );
 }
 
-export function buildQueryString(
-  filters: UiFilters,
-  cursor?: string | null,
-  limit = 300,
-  options?: { traceId?: string }
-): string {
+export function buildPaginationQueryString(cursor?: string | null, limit = 300): string {
   const params = new URLSearchParams();
   params.set('limit', String(limit));
 
@@ -274,34 +259,7 @@ export function buildQueryString(
     params.set('cursor', cursor);
   }
 
-  for (const eventType of filters.eventTypes) {
-    const value = eventType.trim();
-    if (value) {
-      params.append('eventType', value);
-    }
-  }
-  if (filters.q.trim()) params.set('q', filters.q.trim());
-  if (options?.traceId?.trim()) params.set('traceId', options.traceId.trim());
-
   return params.toString();
-}
-
-export function eventMatchesFilters(event: NormalizedEvent, filters: UiFilters): boolean {
-  const normalizedEventTypes = filters.eventTypes.map((value) => value.trim().toLowerCase()).filter(Boolean);
-  if (normalizedEventTypes.length > 0) {
-    const eventType = getEventType(event).toLowerCase();
-    if (!normalizedEventTypes.includes(eventType)) {
-      return false;
-    }
-  }
-  if (filters.q.trim()) {
-    const q = filters.q.trim().toLowerCase();
-    const haystack = JSON.stringify(event.raw).toLowerCase();
-    if (!haystack.includes(q)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 export function formatTimestamp(iso: string): string {

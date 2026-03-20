@@ -24,7 +24,20 @@
     <Badge variant="outline">Total {state.total}</Badge>
     <Badge variant="outline">Dropped {state.dropped}</Badge>
     <Badge variant="outline">Loaded {state.events.length}</Badge>
-    <Badge variant="outline">Visible {state.filteredEvents.length}</Badge>
     <Badge variant={liveVariant(state.connectionState)}>{state.liveLabel}</Badge>
+    {#if state.sourceList.length === 0}
+      <Badge variant="outline">Sources pending</Badge>
+    {:else}
+      {#each state.sourceList as sourceStatus}
+        <div class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs">
+          <strong class="font-medium">{sourceStatus.sourceId}</strong>
+          <Badge variant={sourceStatus.healthy ? 'default' : 'destructive'}>
+            {sourceStatus.healthy ? 'healthy' : 'degraded'}
+          </Badge>
+          <span class="text-muted-foreground">lines {sourceStatus.totalLines}</span>
+          <span class="text-muted-foreground">malformed {sourceStatus.malformedLines}</span>
+        </div>
+      {/each}
+    {/if}
   </div>
 </header>

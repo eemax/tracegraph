@@ -2,10 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { NormalizedEvent } from '@tracegraph/shared';
 import {
   buildEventTypeGroups,
-  buildQueryString,
+  buildPaginationQueryString,
   buildTraceGroups,
   buildTraceTimeline,
-  eventMatchesFilters,
   formatTraceLabel,
   getEventType,
   getTraceGroupKey,
@@ -46,32 +45,11 @@ function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): Norma
 }
 
 describe('ui helpers', () => {
-  it('builds query string from active filters', () => {
-    const query = buildQueryString(
-      {
-        eventTypes: ['tool.workflow.progress', 'provider.openai.request.started'],
-        q: 'world'
-      },
-      '40',
-      100
-    );
+  it('builds pagination query string', () => {
+    const query = buildPaginationQueryString('40', 100);
 
     expect(query).toContain('cursor=40');
     expect(query).toContain('limit=100');
-    expect(query).toContain('eventType=tool.workflow.progress');
-    expect(query).toContain('eventType=provider.openai.request.started');
-    expect(query).toContain('q=world');
-  });
-
-  it('matches event against supported filters', () => {
-    const event = makeEvent(1);
-
-    const matched = eventMatchesFilters(event, {
-      eventTypes: ['tool.workflow.progress'],
-      q: 'hello'
-    });
-
-    expect(matched).toBe(true);
   });
 
   it('builds nested trace timeline depths', () => {

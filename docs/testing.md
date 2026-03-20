@@ -31,25 +31,24 @@ bun run test:smoke        # bash API health check
 | File | Covers |
 |------|--------|
 | `apps/server/test/normalize.test.ts` | Event normalization, non-object rejection |
-| `apps/server/test/event-store.test.ts` | Filter combinations, search, ring buffer overflow |
-| `apps/web/src/lib/ui.test.ts` | Query string generation, client-side filtering, trace timeline depth |
-| `apps/web/src/lib/state/explorer.test.ts` | Parsed field projection and default filter helpers |
-| `apps/web/src/lib/state/explorer-filters.test.ts` | Draft vs active filter transitions (type/apply/reset) |
+| `apps/server/test/event-store.test.ts` | Ascending cursor pagination, trace timeline query, ring buffer overflow |
+| `apps/web/src/lib/ui.test.ts` | Pagination query generation, grouping helpers, trace timeline depth |
+| `apps/web/src/lib/state/explorer.test.ts` | Parsed field projection |
 | `apps/web/src/lib/state/explorer-index.test.ts` | Incremental append ordering, de-dup/update, cap trimming |
-| `apps/web/src/lib/state/explorer-selectors.test.ts` | Group/filter selectors and virtualization window outputs |
+| `apps/web/src/lib/state/explorer-selectors.test.ts` | Group selectors and virtualization window outputs |
 
 ### Integration
 
 | File | Covers |
 |------|--------|
 | `apps/server/test/log-ingestion.test.ts` | Append ingestion, truncation recovery, rotation recovery, malformed lines |
-| `apps/server/test/api.test.ts` | Cursor pagination, multi-source ordering, SSE snapshot/append/reconnect |
+| `apps/server/test/api.test.ts` | Ascending cursor pagination, deprecated param ignore behavior, trace endpoint, SSE snapshot/append/reconnect |
 
 ### E2E
 
 | File | Covers |
 |------|--------|
-| `apps/web/e2e/smoke.spec.ts` | App render/selection, unapplied filter behavior, keyboard visibility, mobile inspector open/close retention |
+| `apps/web/e2e/smoke.spec.ts` | App render/selection, no-filter UI assertions, keyboard visibility, mobile inspector open/close retention |
 
 ### Planned
 

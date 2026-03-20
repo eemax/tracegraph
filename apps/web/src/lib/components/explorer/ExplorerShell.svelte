@@ -5,10 +5,8 @@
   import * as Sheet from '$lib/components/ui/sheet/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
   import EventVirtualList from './EventVirtualList.svelte';
-  import FilterPanel from './FilterPanel.svelte';
   import GroupSidebar from './GroupSidebar.svelte';
   import InspectorPanel from './InspectorPanel.svelte';
-  import SourceStatusStrip from './SourceStatusStrip.svelte';
   import TopbarStats from './TopbarStats.svelte';
 
   let { state }: { state: ExplorerState } = $props();
@@ -55,9 +53,6 @@
           <header class="flex items-center justify-between gap-2 px-4 py-2">
             <h2 class="text-xs font-semibold uppercase tracking-wide">Event Feed</h2>
           </header>
-
-          <FilterPanel {state} />
-          <SourceStatusStrip {state} />
 
           <div class="min-h-0 flex-1">
             <Resizable.ResizablePaneGroup direction="horizontal" class="h-full">
@@ -115,8 +110,6 @@
         </div>
       </header>
 
-      <FilterPanel {state} />
-      <SourceStatusStrip {state} />
       <EventVirtualList {state} />
     </section>
   </div>
@@ -126,7 +119,7 @@
   <Sheet.SheetContent side="left" class="w-full max-w-sm p-0 sm:max-w-sm" aria-label="Group selector">
     <Sheet.SheetHeader class="border-b px-4 py-3">
       <Sheet.SheetTitle>Groups</Sheet.SheetTitle>
-      <Sheet.SheetDescription>Pick the visible trace group.</Sheet.SheetDescription>
+      <Sheet.SheetDescription>Browse trace groups and counts.</Sheet.SheetDescription>
     </Sheet.SheetHeader>
 
     <div class="min-h-0 h-full">

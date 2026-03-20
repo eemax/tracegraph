@@ -3,7 +3,7 @@ import type { NormalizedEvent } from '@tracegraph/shared';
 export const defaultClientEventCap = 100_000;
 
 function getSeqAt(id: string, byId: Map<string, NormalizedEvent>): number {
-  return byId.get(id)?.seq ?? Number.NEGATIVE_INFINITY;
+  return byId.get(id)?.seq ?? Number.POSITIVE_INFINITY;
 }
 
 export class IncrementalEventIndex {
@@ -61,7 +61,7 @@ export class IncrementalEventIndex {
 
   private trimToCap(): void {
     while (this.orderedIds.length > this.cap) {
-      const removedId = this.orderedIds.pop();
+      const removedId = this.orderedIds.shift();
       if (removedId) {
         this.byId.delete(removedId);
       }
@@ -76,7 +76,7 @@ export class IncrementalEventIndex {
       const mid = Math.floor((low + high) / 2);
       const midSeq = getSeqAt(this.orderedIds[mid] ?? '', this.byId);
 
-      if (midSeq > seq) {
+      if (midSeq < seq) {
         low = mid + 1;
       } else {
         high = mid;

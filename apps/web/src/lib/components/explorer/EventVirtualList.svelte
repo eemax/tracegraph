@@ -2,7 +2,7 @@
   import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert/index.js';
   import { Spinner } from '$lib/components/ui/spinner/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
-  import { formatTimestamp, formatTraceLabel, getTraceGroupKey } from '$lib/ui';
+  import { formatTimestamp } from '$lib/ui';
 
   let { state }: { state: ExplorerState } = $props();
 
@@ -15,21 +15,14 @@
       }
     };
   }
-
-  function selectTraceGroup(event: MouseEvent, traceGroupKey: string): void {
-    event.stopPropagation();
-    state.selectGroup(traceGroupKey);
-  }
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
-  {#if !state.loading && state.filteredEvents.length === 0}
+  {#if !state.loading && state.events.length === 0}
     <div class="p-3">
       <Alert>
         <AlertTitle>No events yet</AlertTitle>
-        <AlertDescription>
-          {state.hasActiveFilters ? 'No events match your current filters or selected group.' : 'Waiting for events from configured sources.'}
-        </AlertDescription>
+        <AlertDescription>Waiting for events from configured sources.</AlertDescription>
       </Alert>
     </div>
   {:else}
@@ -79,15 +72,6 @@
               <span class="inline-flex max-w-full items-center gap-2 truncate text-muted-foreground">
                 <span>{row.stage ?? 'n/a'}</span>
                 <span>{row.sourceLabel}</span>
-                <button
-                  type="button"
-                  class="hover:text-foreground rounded border px-1.5 py-0.5 leading-none"
-                  onclick={(event) => {
-                    selectTraceGroup(event, getTraceGroupKey(row));
-                  }}
-                >
-                  {formatTraceLabel(getTraceGroupKey(row))}
-                </button>
               </span>
             </div>
             <span class="shrink-0 text-muted-foreground">{formatTimestamp(row.timestamp)}</span>

@@ -3,68 +3,48 @@ import { EventStore } from '../src/lib/event-store';
 import { makeEvent } from './helpers';
 
 describe('EventStore query', () => {
-  it('supports filter combinations and full-text search', () => {
+  it('returns ascending chronological pages with stable nextCursor', () => {
     const store = new EventStore(10);
 
-    store.add(
-      makeEvent(1, {
-        event: 'telegram.inbound.received',
-        stage: 'received',
-        chatId: 'chat-1',
-        trace: { traceId: 'trace-1', spanId: 'span-1', parentSpanId: null, origin: 'telegram' },
-        payload: { text: 'How are you' }
-      })
-    );
-    store.add(
-      makeEvent(2, {
-        event: 'routing.gatekeeping.checked',
-        stage: 'checked',
-        chatId: 'chat-2',
-        trace: { traceId: 'trace-2', spanId: 'span-2', parentSpanId: null, origin: 'routing' },
-        payload: { allowed: true }
-      })
-    );
+    store.add(makeEvent(1, { event: 'first' }));
+    store.add(makeEvent(2, { event: 'second' }));
+    store.add(makeEvent(3, { event: 'third' }));
 
-    const filtered = store.query({
-      event: 'telegram.inbound.received',
-      stage: 'received',
-      origin: 'telegram',
-      chatId: 'chat-1',
-      q: 'how are you'
-    });
+    const firstPage = store.query({ limit: 2 });
+    expect(firstPage.items.map((item) => item.seq)).toEqual([1, 2]);
+    expect(firstPage.nextCursor).toBe('2');
+    expect(firstPage.total).toBe(3);
 
-    expect(filtered.items).toHaveLength(1);
-    expect(filtered.items[0]?.seq).toBe(1);
+    const secondPage = store.query({ limit: 2, cursor: firstPage.nextCursor ?? undefined });
+    expect(secondPage.items.map((item) => item.seq)).toEqual([3]);
+    expect(secondPage.nextCursor).toBeNull();
   });
 
-  it('supports multi-select eventType filtering', () => {
+  it('ignores invalid cursors', () => {
     const store = new EventStore(10);
 
-    store.add(
-      makeEvent(1, {
-        event: 'provider.request.started',
-        payload: { text: 'start' }
-      })
-    );
-    store.add(
-      makeEvent(2, {
-        event: 'provider.request.completed',
-        payload: { text: 'done' }
-      })
-    );
-    store.add(
-      makeEvent(3, {
-        event: 'tool.workflow.progress',
-        payload: { text: 'progress' }
-      })
-    );
+    store.add(makeEvent(1, { event: 'first' }));
+    store.add(makeEvent(2, { event: 'second' }));
 
-    const filtered = store.query({
-      eventType: ['provider.request.started', 'provider.request.completed']
-    });
+    const page = store.query({ cursor: 'not-a-number', limit: 10 });
+    expect(page.items.map((item) => item.seq)).toEqual([1, 2]);
+  });
 
-    expect(filtered.items).toHaveLength(2);
-    expect(filtered.items.map((item) => item.event)).toEqual(['provider.request.completed', 'provider.request.started']);
+  it('returns paginated trace timelines without generic filter indexes', () => {
+    const store = new EventStore(10);
+
+    store.add(makeEvent(1, { trace: { traceId: 'trace-a', spanId: 's1', parentSpanId: null, origin: 'tool' } }));
+    store.add(makeEvent(2, { trace: { traceId: 'trace-b', spanId: 's2', parentSpanId: null, origin: 'tool' } }));
+    store.add(makeEvent(3, { trace: { traceId: 'trace-a', spanId: 's3', parentSpanId: 's1', origin: 'tool' } }));
+
+    const firstPage = store.queryTrace('trace-a', { limit: 1 });
+    expect(firstPage.items.map((item) => item.seq)).toEqual([1]);
+    expect(firstPage.nextCursor).toBe('1');
+
+    const secondPage = store.queryTrace('trace-a', { limit: 1, cursor: firstPage.nextCursor ?? undefined });
+    expect(secondPage.items.map((item) => item.seq)).toEqual([3]);
+    expect(secondPage.nextCursor).toBeNull();
+    expect(secondPage.total).toBe(2);
   });
 
   it('caps storage and tracks dropped events', () => {
@@ -77,6 +57,6 @@ describe('EventStore query', () => {
     expect(store.droppedCount).toBe(1);
 
     const latest = store.query({ limit: 10 });
-    expect(latest.items.map((item) => item.seq)).toEqual([3, 2]);
+    expect(latest.items.map((item) => item.seq)).toEqual([2, 3]);
   });
 });

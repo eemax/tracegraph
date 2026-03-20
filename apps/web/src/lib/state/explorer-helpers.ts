@@ -1,5 +1,5 @@
 import type { NormalizedEvent } from '@tracegraph/shared';
-import { formatTimestamp, type UiFilters } from '../ui';
+import { formatTimestamp } from '../ui';
 
 export type ParsedField = { label: string; value: string };
 
@@ -11,13 +11,6 @@ function toDisplay(value: unknown): string {
   }
 
   return String(value);
-}
-
-export function createDefaultFilters(): UiFilters {
-  return {
-    eventTypes: [],
-    q: ''
-  };
 }
 
 export function buildParsedFields(event: NormalizedEvent): ParsedField[] {

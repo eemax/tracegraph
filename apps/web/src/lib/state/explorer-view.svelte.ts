@@ -107,57 +107,51 @@ export class ExplorerViewState {
     return threshold < loadMoreThreshold;
   }
 
-  resetForFilterApply(): void {
-    this.selectedGroup = allGroupsKey;
-    this.selectedId = null;
-    this.resetListScroll();
-  }
-
   ensureSelectedGroupExists(groupKeys: string[]): void {
     if (this.selectedGroup !== allGroupsKey && !groupKeys.includes(this.selectedGroup)) {
       this.selectedGroup = allGroupsKey;
     }
   }
 
-  ensureSelectedEventExists(filteredEvents: NormalizedEvent[]): void {
-    const hasSelected = this.selectedId !== null && filteredEvents.some((item) => item.id === this.selectedId);
+  ensureSelectedEventExists(events: NormalizedEvent[]): void {
+    const hasSelected = this.selectedId !== null && events.some((item) => item.id === this.selectedId);
 
-    if (filteredEvents.length === 0) {
+    if (events.length === 0) {
       this.selectedId = null;
       return;
     }
 
     if (!hasSelected) {
-      this.selectedId = filteredEvents[0]?.id ?? null;
+      this.selectedId = events[0]?.id ?? null;
     }
   }
 
-  moveSelection(direction: 1 | -1, filteredEvents: NormalizedEvent[]): void {
-    if (filteredEvents.length === 0) {
+  moveSelection(direction: 1 | -1, events: NormalizedEvent[]): void {
+    if (events.length === 0) {
       return;
     }
 
-    const index = this.selectedId ? filteredEvents.findIndex((item) => item.id === this.selectedId) : -1;
-    const nextIndex = index < 0 ? 0 : Math.max(0, Math.min(filteredEvents.length - 1, index + direction));
-    this.selectedId = filteredEvents[nextIndex]?.id ?? null;
+    const index = this.selectedId ? events.findIndex((item) => item.id === this.selectedId) : -1;
+    const nextIndex = index < 0 ? 0 : Math.max(0, Math.min(events.length - 1, index + direction));
+    this.selectedId = events[nextIndex]?.id ?? null;
 
-    this.ensureSelectedEventVisible(filteredEvents);
+    this.ensureSelectedEventVisible(events);
   }
 
-  onKeyDown(event: KeyboardEvent, filteredEvents: NormalizedEvent[]): void {
+  onKeyDown(event: KeyboardEvent, events: NormalizedEvent[]): void {
     if (isTypingTarget(event.target)) {
       return;
     }
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      this.moveSelection(1, filteredEvents);
+      this.moveSelection(1, events);
       return;
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      this.moveSelection(-1, filteredEvents);
+      this.moveSelection(-1, events);
       return;
     }
 
@@ -176,12 +170,12 @@ export class ExplorerViewState {
     this.inspectorPane?.focus();
   }
 
-  private ensureSelectedEventVisible(filteredEvents: NormalizedEvent[]): void {
+  private ensureSelectedEventVisible(events: NormalizedEvent[]): void {
     if (!this.listPane || !this.selectedId) {
       return;
     }
 
-    const index = filteredEvents.findIndex((event) => event.id === this.selectedId);
+    const index = events.findIndex((event) => event.id === this.selectedId);
     if (index < 0) {
       return;
     }

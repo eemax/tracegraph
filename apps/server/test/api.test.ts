@@ -14,7 +14,7 @@ function parseSseChunk(chunk: string) {
 }
 
 describe('HTTP API integration', () => {
-  it('provides cursor pagination and multi-source ordering', async () => {
+  it('provides ascending cursor pagination and deterministic multi-source ordering', async () => {
     await withTempDir('tracegraph-api-', async (dir) => {
       const sourceAPath = path.join(dir, 'a.jsonl');
       const sourceBPath = path.join(dir, 'b.jsonl');
@@ -31,7 +31,7 @@ describe('HTTP API integration', () => {
       const firstResponse = await server.app.handle(new Request('http://localhost/api/events?limit=2'));
       const firstData = await firstResponse.json();
 
-      expect(firstData.items.map((item: { seq: number }) => item.seq)).toEqual([3, 2]);
+      expect(firstData.items.map((item: { seq: number }) => item.seq)).toEqual([1, 2]);
       expect(firstData.nextCursor).toBe('2');
 
       const secondResponse = await server.app.handle(
@@ -39,7 +39,53 @@ describe('HTTP API integration', () => {
       );
       const secondData = await secondResponse.json();
 
-      expect(secondData.items.map((item: { seq: number }) => item.seq)).toEqual([1]);
+      expect(secondData.items.map((item: { seq: number }) => item.seq)).toEqual([3]);
+      expect(secondData.nextCursor).toBeNull();
+    });
+  });
+
+  it('ignores deprecated /api/events query params', async () => {
+    await withTempDir('tracegraph-api-', async (dir) => {
+      const sourcePath = path.join(dir, 'a.jsonl');
+      await writeFile(sourcePath, '', 'utf8');
+
+      const configPath = await createConfig(dir, sourcePath);
+      const server = await createServer({ configPath, autoStartIngestion: false });
+
+      server.store.add(makeEvent(1, { event: 'a-1' }));
+      server.store.add(makeEvent(2, { event: 'a-2' }));
+
+      const response = await server.app.handle(
+        new Request('http://localhost/api/events?limit=10&event=a-1&traceId=t-1&q=needle&stage=done')
+      );
+      const data = await response.json();
+
+      expect(data.items.map((item: { seq: number }) => item.seq)).toEqual([1, 2]);
+    });
+  });
+
+  it('serves trace timeline events via dedicated trace endpoint', async () => {
+    await withTempDir('tracegraph-api-', async (dir) => {
+      const sourcePath = path.join(dir, 'a.jsonl');
+      await writeFile(sourcePath, '', 'utf8');
+
+      const configPath = await createConfig(dir, sourcePath);
+      const server = await createServer({ configPath, autoStartIngestion: false });
+
+      server.store.add(makeEvent(1, { trace: { traceId: 'trace-1', spanId: 's1', parentSpanId: null, origin: 'tool' } }));
+      server.store.add(makeEvent(2, { trace: { traceId: 'trace-2', spanId: 's2', parentSpanId: null, origin: 'tool' } }));
+      server.store.add(makeEvent(3, { trace: { traceId: 'trace-1', spanId: 's3', parentSpanId: 's1', origin: 'tool' } }));
+
+      const firstResponse = await server.app.handle(new Request('http://localhost/api/traces/trace-1/events?limit=1'));
+      const firstData = await firstResponse.json();
+      expect(firstData.items.map((item: { seq: number }) => item.seq)).toEqual([1]);
+      expect(firstData.nextCursor).toBe('1');
+
+      const secondResponse = await server.app.handle(
+        new Request(`http://localhost/api/traces/trace-1/events?limit=1&cursor=${firstData.nextCursor}`)
+      );
+      const secondData = await secondResponse.json();
+      expect(secondData.items.map((item: { seq: number }) => item.seq)).toEqual([3]);
     });
   });
 

@@ -31,12 +31,12 @@ function makeEvent(seq: number, overrides: Partial<NormalizedEvent> = {}): Norma
 }
 
 describe('incremental event index', () => {
-  it('keeps descending seq order while inserting without full sort', () => {
+  it('keeps ascending seq order while inserting without full sort', () => {
     const index = new IncrementalEventIndex();
 
     index.merge([makeEvent(3), makeEvent(1), makeEvent(4), makeEvent(2)]);
 
-    expect(index.toArray().map((event) => event.id)).toEqual(['event-4', 'event-3', 'event-2', 'event-1']);
+    expect(index.toArray().map((event) => event.id)).toEqual(['event-1', 'event-2', 'event-3', 'event-4']);
   });
 
   it('replaces existing id and repositions only when seq changes', () => {
@@ -45,7 +45,7 @@ describe('incremental event index', () => {
     index.merge([makeEvent(3), makeEvent(2), makeEvent(1)]);
     index.upsert(makeEvent(2, { stage: 'updated' }));
 
-    expect(index.toArray().map((event) => event.id)).toEqual(['event-3', 'event-2', 'event-1']);
+    expect(index.toArray().map((event) => event.id)).toEqual(['event-1', 'event-2', 'event-3']);
     expect(index.toArray()[1]?.stage).toBe('updated');
 
     index.upsert(
@@ -56,7 +56,7 @@ describe('incremental event index', () => {
       })
     );
 
-    expect(index.toArray().map((event) => event.id)).toEqual(['event-2', 'event-3', 'event-1']);
+    expect(index.toArray().map((event) => event.id)).toEqual(['event-1', 'event-3', 'event-2']);
   });
 
   it('trims old items to the configured cap', () => {
@@ -64,6 +64,6 @@ describe('incremental event index', () => {
 
     index.merge([makeEvent(1), makeEvent(2), makeEvent(3), makeEvent(4)]);
 
-    expect(index.toArray().map((event) => event.id)).toEqual(['event-4', 'event-3', 'event-2']);
+    expect(index.toArray().map((event) => event.id)).toEqual(['event-2', 'event-3', 'event-4']);
   });
 });

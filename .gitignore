@@ -9,3 +9,4 @@ tests/fixtures/observability.load.100k.jsonl
 playwright-report/
 test-results/
 .DS_Store
+docs/plans/
