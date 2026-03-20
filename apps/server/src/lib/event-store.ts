@@ -30,6 +30,8 @@ export class EventStore {
 
   private readonly byId = new Map<string, NormalizedEvent>();
 
+  private readonly byTraceId = new Map<string, number[]>();
+
   constructor(capacity = 100_000) {
     this.capacity = capacity;
     this.slots = Array.from({ length: capacity }, () => null);
@@ -78,8 +80,30 @@ export class EventStore {
 
     this.byId.set(event.id, event);
 
+    const traceId = event.trace?.traceId;
+    if (traceId) {
+      let seqs = this.byTraceId.get(traceId);
+      if (!seqs) {
+        seqs = [];
+        this.byTraceId.set(traceId, seqs);
+      }
+      seqs.push(event.seq);
+    }
+
     if (evicted) {
       this.byId.delete(evicted.id);
+      const evictedTraceId = evicted.trace?.traceId;
+      if (evictedTraceId) {
+        const evictedSeqs = this.byTraceId.get(evictedTraceId);
+        if (evictedSeqs) {
+          // Evicted event is always the oldest, so its seq is at the front.
+          if (evictedSeqs.length <= 1) {
+            this.byTraceId.delete(evictedTraceId);
+          } else {
+            evictedSeqs.shift();
+          }
+        }
+      }
     }
   }
 
@@ -115,33 +139,41 @@ export class EventStore {
     const cursor = parseCursor(rawQuery.cursor);
     const normalizedTraceId = traceId.trim();
 
+    const seqs = this.byTraceId.get(normalizedTraceId);
+    if (!seqs || seqs.length === 0) {
+      return { items: [], nextCursor: null, total: 0, dropped: this.dropped };
+    }
+
+    const totalMatches = seqs.length;
+
+    // Find the starting position in the seq list using binary search.
+    let startIdx = 0;
+    if (cursor !== undefined) {
+      let low = 0;
+      let high = seqs.length;
+      while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if (seqs[mid] <= cursor) {
+          low = mid + 1;
+        } else {
+          high = mid;
+        }
+      }
+      startIdx = low;
+    }
+
     const items: NormalizedEvent[] = [];
-    let totalMatches = 0;
-    let cursorMatches = 0;
+    const afterCursorCount = seqs.length - startIdx;
+    const oldestSeq = this.readByOrdinal(0)?.seq ?? 0;
 
-    for (let i = 0; i < this.count; i += 1) {
-      const event = this.readByOrdinal(i);
-      if (!event) {
-        continue;
-      }
-
-      if (event.trace?.traceId !== normalizedTraceId) {
-        continue;
-      }
-
-      totalMatches += 1;
-
-      if (cursor !== undefined && event.seq <= cursor) {
-        continue;
-      }
-
-      cursorMatches += 1;
-      if (items.length < limit) {
+    for (let i = startIdx; i < seqs.length && items.length < limit; i += 1) {
+      const event = this.readByOrdinal(seqs[i] - oldestSeq);
+      if (event) {
         items.push(event);
       }
     }
 
-    const hasMore = cursorMatches > items.length;
+    const hasMore = afterCursorCount > items.length;
 
     return {
       items,

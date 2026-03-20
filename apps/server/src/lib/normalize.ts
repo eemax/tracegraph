@@ -393,7 +393,3 @@ export function normalizeEvent(rawValue: unknown, context: NormalizeContext): No
 
   return normalized;
 }
-
-export function toSearchText(event: NormalizedEvent): string {
-  return JSON.stringify(event.raw).toLowerCase();
-}

@@ -32,7 +32,6 @@ export class ExplorerDataState {
   traceGroupId = $state<string | null>(null);
 
   traceTimeline = $state<TimelineItem[]>([]);
-  currentTraceRequest = $state<string | null>(null);
 
   connectionState = $state<ConnectionState>('connecting');
   errorMessage = $state<string | null>(null);
@@ -162,51 +161,13 @@ export class ExplorerDataState {
     }
   }
 
-  async syncTraceTimeline(traceId: string | null): Promise<void> {
-    if (!traceId) {
+  rebuildTraceTimeline(traceId: string | null): void {
+    if (!traceId || this.traceGroupId !== traceId || this.traceGroupEvents.length === 0) {
       this.traceTimeline = [];
-      this.currentTraceRequest = null;
       return;
     }
 
-    if (traceId === this.currentTraceRequest) {
-      return;
-    }
-
-    this.currentTraceRequest = traceId;
-
-    try {
-      const allTraceItems: NormalizedEvent[] = [];
-      let cursor: string | null = null;
-
-      do {
-        const payload = await fetchTraceEvents(traceId, cursor, 1000);
-
-        if (this.currentTraceRequest !== traceId) {
-          return;
-        }
-
-        allTraceItems.push(...payload.items);
-        cursor = payload.nextCursor;
-      } while (cursor);
-
-      if (this.currentTraceRequest !== traceId) {
-        return;
-      }
-
-      this.traceTimeline = buildTraceTimeline(allTraceItems);
-      this.errorMessage = null;
-    } catch (error) {
-      if (this.currentTraceRequest === traceId) {
-        this.traceTimeline = [];
-      }
-
-      const message = getErrorMessage(error);
-      this.errorMessage = message;
-      toast.error('Failed to load trace timeline', {
-        description: message
-      });
-    }
+    this.traceTimeline = buildTraceTimeline(this.traceGroupEvents);
   }
 
   ingestEnvelope(envelope: SseEnvelope): void {

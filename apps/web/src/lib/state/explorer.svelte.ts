@@ -80,7 +80,10 @@ export class ExplorerState {
 
     $effect(() => {
       const traceId = this.selectedEvent?.trace?.traceId ?? null;
-      void this.data.syncTraceTimeline(traceId);
+      // Read traceGroupEvents to establish reactive dependency so the timeline
+      // rebuilds when the fetch completes, not just when selection changes.
+      const _events = this.data.traceGroupEvents;
+      this.data.rebuildTraceTimeline(traceId);
     });
   }
 

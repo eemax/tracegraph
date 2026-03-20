@@ -21,9 +21,11 @@ interface ServerContext {
   ingestion: LogIngestionService;
 }
 
+const textEncoder = new TextEncoder();
+
 function sendSse(controller: ReadableStreamDefaultController<Uint8Array>, envelope: SseEnvelope): void {
   const payload = `event: message\ndata: ${JSON.stringify(envelope)}\n\n`;
-  controller.enqueue(new TextEncoder().encode(payload));
+  controller.enqueue(textEncoder.encode(payload));
 }
 
 function parsePaginationQuery(query: Record<string, unknown>): EventFilterQuery {
@@ -113,7 +115,7 @@ export async function createServer(options: ServerOptions = {}): Promise<ServerC
         });
 
         const heartbeat = setInterval(() => {
-          controller.enqueue(new TextEncoder().encode(': ping\n\n'));
+          controller.enqueue(textEncoder.encode(': ping\n\n'));
         }, 15_000);
 
         const cleanup = () => {
