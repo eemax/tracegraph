@@ -3,7 +3,7 @@
   import { Badge } from '$lib/components/ui/badge/index.js';
   import { Spinner } from '$lib/components/ui/spinner/index.js';
   import type { ExplorerState } from '$lib/state/explorer.svelte';
-  import { formatTimestamp } from '$lib/ui';
+  import { formatDurationMs, formatTimestamp } from '$lib/ui';
 
   let { state }: { state: ExplorerState } = $props();
 
@@ -23,7 +23,7 @@
     <div class="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-xs">
       <Badge variant="secondary">trace...{state.selectedGroupSummary.traceId.slice(-8)}</Badge>
       <span class="text-muted-foreground">{state.selectedGroupSummary.eventCount} events</span>
-      <span class="text-muted-foreground">{state.selectedGroupSummary.durationMs}ms</span>
+      <span class="text-muted-foreground">{formatDurationMs(state.selectedGroupSummary.durationMs)}</span>
     </div>
   {/if}
 

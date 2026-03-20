@@ -305,6 +305,31 @@ export function formatIsoTimestampsInJson(prettyJson: string): string {
   });
 }
 
+function trimFixed1(value: number): string {
+  const s = value.toFixed(1);
+  return s.endsWith('.0') ? s.slice(0, -2) : s;
+}
+
+/**
+ * Formats a duration according to magnitude:
+ * - < 1s: milliseconds (integer), e.g. "999 ms"
+ * - >= 1s and < 60s: seconds (1 decimal, e.g. "1.6 sec")
+ * - >= 60s: minutes (1 decimal, e.g. "2.5 min")
+ */
+export function formatDurationMs(durationMs: number): string {
+  const safe = Number.isFinite(durationMs) ? Math.max(0, durationMs) : 0;
+
+  if (safe < 1000) {
+    return `${Math.round(safe)} ms`;
+  }
+
+  if (safe < 60_000) {
+    return `${trimFixed1(safe / 1000)} sec`;
+  }
+
+  return `${trimFixed1(safe / 60_000)} min`;
+}
+
 export function buildTraceTimeline(events: NormalizedEvent[]): TimelineItem[] {
   const ordered = [...events].sort((a, b) => a.seq - b.seq);
   const bySpan = new Map<string, NormalizedEvent>();

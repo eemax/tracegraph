@@ -5,6 +5,7 @@ import {
   buildPaginationQueryString,
   buildTraceGroups,
   buildTraceTimeline,
+  formatDurationMs,
   formatTraceLabel,
   getEventType,
   getTraceGroupKey,
@@ -156,5 +157,16 @@ describe('ui helpers', () => {
     expect(highlighted).toContain('json-boolean');
     expect(highlighted).toContain('json-number');
     expect(highlighted).toContain('json-null');
+  });
+
+  it('formats trace duration human-readably', () => {
+    expect(formatDurationMs(500)).toBe('500 ms');
+    expect(formatDurationMs(999)).toBe('999 ms');
+
+    expect(formatDurationMs(1200)).toBe('1.2 sec');
+    expect(formatDurationMs(1600)).toBe('1.6 sec');
+
+    expect(formatDurationMs(60_000)).toBe('1 min');
+    expect(formatDurationMs(90_000)).toBe('1.5 min');
   });
 });

@@ -36,9 +36,12 @@ export class ExplorerState {
     if (this.view.selectedGroup === allGroupsKey) return null;
     const events = this.filteredEvents;
     if (events.length === 0) return null;
-    const first = events[events.length - 1];
-    const last = events[0];
-    const durationMs = new Date(last.timestamp).getTime() - new Date(first.timestamp).getTime();
+    // Use min/max so the duration is correct even if `events` are ordered newest->oldest.
+    const times = events
+      .map((e) => new Date(e.timestamp).getTime())
+      .filter((t) => !Number.isNaN(t));
+
+    const durationMs = times.length > 0 ? Math.max(...times) - Math.min(...times) : 0;
     return {
       traceId: this.view.selectedGroup,
       eventCount: events.length,
